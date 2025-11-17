@@ -1,0 +1,27 @@
+<div class="container">
+  <div class="card">
+    <div *ngIf="isConnecting" class="status">
+      <div class="spinner"></div>
+      <h2>Connexion en cours...</h2>
+      <p>Recherche de l'appareil sur le réseau</p>
+    </div>
+
+    <div *ngIf="connectionFailed" class="status">
+      <div class="icon-error">✕</div>
+      <h2>Appareil introuvable</h2>
+      <p>Veuillez vérifier que :</p>
+      <ul>
+        <li>Vous êtes connecté au Wi-Fi</li>
+        <li>L'appareil est allumé</li>
+        <li>L'appareil est sur le même réseau</li>
+      </ul>
+      <button (click)="retry()" class="btn-retry">Réessayer</button>
+    </div>
+
+    <div *ngIf="connectionSuccess" class="status">
+      <div class="icon-success">✓</div>
+      <h2>Connexion réussie</h2>
+      <p>Redirection dans 2 secondes...</p>
+    </div>
+  </div>
+</div>

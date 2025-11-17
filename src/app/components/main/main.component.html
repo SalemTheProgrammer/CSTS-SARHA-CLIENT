@@ -1,0 +1,71 @@
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>Sarha - Fichiers de l'appareil</h1>
+      <div class="header-actions">
+        <button (click)="openSettings()" class="btn-settings" title="Paramètres">
+          ⚙️
+        </button>
+        <button (click)="refresh()" class="btn-refresh" [disabled]="isLoading || isDownloading">
+          {{ isLoading ? 'Chargement...' : 'Actualiser' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="config" class="config-info">
+      <p><strong>Appareil :</strong> {{ config.deviceName }}</p>
+      <p><strong>Adresse IP :</strong> {{ config.deviceIp }}</p>
+      <p class="success-message">✓ Connexion établie</p>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Chargement des fichiers...</p>
+    </div>
+
+    <div *ngIf="isDownloading" class="downloading">
+      <div class="spinner"></div>
+      <p>Téléchargement des fichiers en cours...</p>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="(downloadProgress / downloadTotal) * 100"></div>
+      </div>
+      <p class="progress-text">{{ downloadProgress }} / {{ downloadTotal }} fichiers</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="!isLoading && !errorMessage && files.length === 0" class="no-files">
+      Aucun fichier disponible
+    </div>
+
+    <div *ngIf="!isLoading && files.length > 0" class="file-list">
+      <h2>Fichiers disponibles ({{ files.length }})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nom du fichier</th>
+            <th>Taille</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let file of files">
+            <td class="file-name">{{ file.name }}</td>
+            <td class="file-size">{{ file.size }}</td>
+            <td class="actions">
+              <button (click)="downloadFile(file)" class="btn-download">
+                Télécharger
+              </button>
+              <!-- Add the Voir button next to Télécharger -->
+              <button (click)="viewGraph(file)" class="btn-view" [disabled]="isLoadingGraph">
+                {{ isLoadingGraph ? 'Chargement...' : 'Voir' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

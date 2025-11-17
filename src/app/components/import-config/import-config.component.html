@@ -1,0 +1,20 @@
+<div class="container">
+  <div class="card">
+    <h1>Bienvenue sur Sarha</h1>
+    <p class="subtitle">Importez votre fichier de configuration chiffré</p>
+    
+    <label for="file-input" class="file-label">
+      <span>Choisir un fichier</span>
+      <input 
+        id="file-input"
+        type="file" 
+        accept=".txt,.enc"
+        (change)="onFileSelected($event)"
+        [disabled]="isLoading"
+      />
+    </label>
+
+    <p *ngIf="isLoading" class="loading">Chargement...</p>
+    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+  </div>
+</div>

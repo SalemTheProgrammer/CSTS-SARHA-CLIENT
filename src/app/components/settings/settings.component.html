@@ -1,0 +1,52 @@
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <button (click)="goBack()" class="btn-back">← Retour</button>
+      <h1>Paramètres</h1>
+      <div></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="setting-item">
+        <label class="setting-label">
+          <strong>Dossier de téléchargement</strong>
+        </label>
+        <div class="folder-selector">
+          <input 
+            type="text" 
+            [(ngModel)]="settings.downloadPath" 
+            readonly 
+            class="folder-input"
+            placeholder="Sélectionner un dossier"
+          />
+          <button (click)="selectFolder()" class="btn-browse">
+            Parcourir
+          </button>
+        </div>
+        <p class="setting-description">
+          Choisissez où les fichiers seront téléchargés automatiquement
+        </p>
+      </div>
+
+      <div class="setting-item">
+        <label class="setting-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="settings.autoDownload"
+            class="checkbox"
+          />
+          <strong>Téléchargement automatique</strong>
+        </label>
+        <p class="setting-description">
+          Télécharger automatiquement tous les fichiers lors de l'affichage de la liste
+        </p>
+      </div>
+
+      <div class="actions">
+        <button (click)="saveSettings()" class="btn-save">
+          Enregistrer les paramètres
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

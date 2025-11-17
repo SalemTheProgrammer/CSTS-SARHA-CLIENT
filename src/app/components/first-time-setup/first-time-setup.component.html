@@ -1,0 +1,56 @@
+<div class="setup-container">
+  <div class="setup-card">
+    <div class="header-section">
+      <img src="assets/cst.png" alt="Logo" class="logo-image">
+      <h1 class="title">Configuration initiale</h1>
+      <p class="subtitle">Importez votre phrase de passe pour déchiffrer vos données</p>
+    </div>
+
+    <div class="content-section">
+      @if (!passphraseText) {
+        <div 
+          class="drop-zone"
+          [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()">
+          
+          <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H10.5V12H13.5V15H16L12,19Z"/>
+          </svg>
+          <p class="drop-text">Glissez votre fichier .txt ici</p>
+          <p class="drop-subtext">ou cliquez pour parcourir</p>
+          
+          <input 
+            type="file" 
+            #fileInput 
+            accept=".txt"
+            (change)="onFileSelected($event)"
+            style="display: none">
+        </div>
+      }
+
+      @if (passphraseText) {
+        <div class="button-group">
+          <button 
+            type="button" 
+            class="btn btn-primary"
+            (click)="savePassphrase()"
+            [disabled]="!passphraseText"
+          >
+            Continuer
+          </button>
+        </div>
+
+        <div class="preview-section">
+          <svg class="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/>
+          </svg>
+          <p class="preview-text">Fichier chargé - Entrez la phrase de passe</p>
+        </div>
+      }
+    </div>
+ 
+  </div>
+</div>

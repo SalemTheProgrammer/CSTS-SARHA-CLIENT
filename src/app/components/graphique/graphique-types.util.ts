@@ -1,0 +1,31 @@
+export interface MareeRow {
+  Date: string;
+  TimeOfDay: string;
+  Latitude: number;
+  Longitude: number;
+  Temp1?: number;
+  Temp2?: number;
+  Temp3?: number;
+  Temp4?: number;
+  Temp5?: number;
+  Temp6?: number;
+  Temp7?: number;
+  Temp8?: number;
+  Temp9?: number;
+  Temp10?: number;
+  Temp11?: number;
+  Temp12?: number;
+  A1?: number;
+  A2?: number;
+  A3?: number;
+  A4?: number;
+  A5?: number;
+  A6?: number;
+  A7?: number;
+  A8?: number;
+  A9?: number;
+  A10?: number;
+  A11?: number;
+  A12?: number;
+  [key: string]: any;
+}

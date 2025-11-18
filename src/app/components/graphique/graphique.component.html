@@ -2,8 +2,7 @@
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="bg-white border border-gray-300 rounded-lg shadow p-4 mb-4 print:hidden">
-      <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-semibold text-gray-900">Courbe</h1>
+      <div class="flex justify-end items-center mb-4">
         <button 
           type="button" 
           class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition border border-gray-400"
@@ -11,65 +10,80 @@
           ← Retour
         </button>
       </div>
-      
-
     </div>
 
     <!-- Charts -->
     <div *ngFor="let item of spliteddata; let index = index" 
-         class="bg-white border border-gray-300 rounded-lg shadow p-6 mb-6 print:page-break-after-always">
-      
-      <!-- Data Table -->
-      <div [id]="'dataTable'+index" class="mb-6 overflow-x-auto">
-        <table class="w-full max-w-5xl mx-auto text-xs border-collapse">
-          <thead>
-            <tr>
-              <th colspan="4" class="border border-black bg-gray-200 text-black text-center py-2">MAREE</th>
-              <th colspan="2" class="border border-black bg-gray-200 text-black text-center py-2">NAVIRE</th>
-            </tr>
-          </thead>
-          <tbody class="text-black bg-white">
-            <tr>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Société :</th>
-              <td colspan="3" class="border border-black text-center px-3 py-2">{{ company }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nom du Navire :</th>
-              <td class="border border-black text-center px-3 py-2">{{ shipName }}</td>
-            </tr>
-            <tr>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Marée Numéro :</th>
-              <td class="border border-black text-center px-3 py-2">{{ maree }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date de Départ :</th>
-              <td class="border border-black text-center px-3 py-2">{{ startDate }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Immatriculation :</th>
-              <td class="border border-black text-center px-3 py-2">{{ registration }}</td>
-            </tr>
-            <tr>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nombre de Points :</th>
-              <td class="border border-black text-center px-3 py-2">{{ data.length }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date d'arrivée :</th>
-              <td class="border border-black text-center px-3 py-2">{{ endDate }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Numero ASV :</th>
-              <td class="border border-black text-center px-3 py-2">{{ asvNumber }}</td>
-            </tr>
-            <tr>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Trajet Mille Marin :</th>
-              <td class="border border-black text-center px-3 py-2">{{ distance }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Durée :</th>
-              <td class="border border-black text-center px-3 py-2">{{ duration }}</td>
-              <th class="border border-black bg-cyan-200 text-right px-3 py-2">Indicatif D'appel :</th>
-              <td class="border border-black text-center px-3 py-2">{{ callSign }}</td>
-            </tr>
-          </tbody>
-        </table>
+         class="chart-page bg-white border border-gray-300 rounded-lg shadow p-6 mb-6">
+
+      <!-- Content wrapper to push footer down -->
+      <div class="chart-content">
+        <!-- Centered title for each page -->
+        <h2 class="text-xl font-semibold text-center mt-6 mb-6">Relevé de température</h2>
+
+        <!-- Data Table -->
+        <div [id]="'dataTable'+index" class="mb-6 overflow-x-auto">
+          <table class="w-full max-w-5xl mx-auto text-xs border-collapse">
+            <thead>
+              <tr>
+                <th colspan="4" class="border border-black bg-gray-200 text-black text-center py-2">MAREE</th>
+                <th colspan="2" class="border border-black bg-gray-200 text-black text-center py-2">NAVIRE</th>
+              </tr>
+            </thead>
+            <tbody class="text-black bg-white">
+              <tr>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Société :</th>
+                <td colspan="3" class="border border-black text-center px-3 py-2">{{ company }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nom du Navire :</th>
+                <td class="border border-black text-center px-3 py-2">{{ shipName }}</td>
+              </tr>
+              <tr>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Marée Numéro :</th>
+                <td class="border border-black text-center px-3 py-2">{{ maree }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date de Départ :</th>
+                <td class="border border-black text-center px-3 py-2">{{ startDate }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Immatriculation :</th>
+                <td class="border border-black text-center px-3 py-2">{{ registration }}</td>
+              </tr>
+              <tr>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nombre de Points :</th>
+                <td class="border border-black text-center px-3 py-2">{{ data.length }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date d'arrivée :</th>
+                <td class="border border-black text-center px-3 py-2">{{ endDate }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Numero ASV :</th>
+                <td class="border border-black text-center px-3 py-2">{{ asvNumber }}</td>
+              </tr>
+              <tr>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Trajet Mille Marin :</th>
+                <td class="border border-black text-center px-3 py-2">{{ distance }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Durée :</th>
+                <td class="border border-black text-center px-3 py-2">{{ duration }}</td>
+                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Indicatif D'appel :</th>
+                <td class="border border-black text-center px-3 py-2">{{ callSign }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Chart Canvas -->
+        <div class="w-full max-w-5xl mx-auto">
+          <canvas 
+            [id]="'chart'+index" 
+            class="w-full block mx-auto"
+            style="height: 500px; max-height: 500px;">
+          </canvas>
+        </div>
       </div>
 
-      <!-- Chart Canvas -->
-      <div class="w-full max-w-5xl mx-auto">
-        <canvas 
-          [id]="'chart'+index" 
-          class="w-full block mx-auto"
-          style="height: 400px; max-height: 400px;">
-        </canvas>
+      <!-- Print Footer (only visible when printing) -->
+      <div class="print-footer">
+        <div class="print-footer-left">
+          {{ printDate }}&nbsp;&nbsp;&nbsp;{{ printTime }}
+        </div>
+        <div class="print-footer-center"></div>
+        <div class="print-footer-right">
+          © CST F3S 2024 Page {{ index + 1 }}/{{ spliteddata.length }}
+        </div>
       </div>
     </div>
 

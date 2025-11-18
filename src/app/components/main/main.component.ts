@@ -23,6 +23,8 @@ export class MainComponent implements OnInit {
   downloadProgress = 0;
   downloadTotal = 0;
   isLoadingGraph = false;
+  private downloadedFiles: Map<string, string> = new Map(); // Cache for downloaded file contents
+
   constructor(
     private configService: ConfigService,
     private fileService: FileService,
@@ -42,12 +44,18 @@ export class MainComponent implements OnInit {
     this.errorMessage = '';
 
     try {
+      const previousFiles = [...this.files];
       this.files = await this.fileService.fetchFileList(forceRefresh);
-      
-      // Auto-download if enabled and not already downloaded in this session
-      if (forceRefresh && this.settingsService.isAutoDownloadEnabled() && !this.settingsService.hasDownloaded()) {
-        await this.downloadAllFiles();
-        this.settingsService.markAsDownloaded();
+
+      // Only auto-download on manual refresh (Actualiser button)
+      if (forceRefresh && this.settingsService.isAutoDownloadEnabled()) {
+        // Check if files have changed
+        const filesChanged = this.haveFilesChanged(previousFiles, this.files);
+
+        if (filesChanged || !this.settingsService.hasDownloaded()) {
+          await this.downloadAllFiles();
+          this.settingsService.markAsDownloaded();
+        }
       }
     } catch (error) {
       this.errorMessage = 'Erreur lors du chargement des fichiers';
@@ -73,10 +81,13 @@ export class MainComponent implements OnInit {
         const file = this.files[i];
         const blob = await this.fileService.downloadFile(file);
         const text = await blob.text();
-        
+
+        // Cache the file content
+        this.downloadedFiles.set(file.name, text);
+
         const filePath = `${downloadPath}/${file.name}`;
         await writeTextFile(filePath, text);
-        
+
         this.downloadProgress = i + 1;
       } catch (error) {
         console.error(`Failed to download file ${this.files[i].name}:`, error);
@@ -107,24 +118,82 @@ export class MainComponent implements OnInit {
   async viewGraph(file: DeviceFile): Promise<void> {
     this.isLoadingGraph = true;
     try {
-      // Download the file content first
-      const blob = await this.fileService.downloadFile(file);
-      const text = await blob.text();
-      
-      console.log('Downloaded file:', file.name);
+      let text: string;
+
+      // Check if file is already cached
+      if (this.downloadedFiles.has(file.name)) {
+        text = this.downloadedFiles.get(file.name)!;
+        console.log('Using cached file:', file.name);
+      } else {
+        // Download the file content if not cached
+        console.log('Downloading file:', file.name);
+        const blob = await this.fileService.downloadFile(file);
+        text = await blob.text();
+
+        // Cache the file content for future use
+        this.downloadedFiles.set(file.name, text);
+      }
+
       console.log('File content length:', text.length);
       console.log('First 200 chars:', text.substring(0, 200));
-      
+
       if (!text || text.trim().length === 0) {
         alert(`Le fichier ${file.name} est vide.`);
         return;
       }
-      
+
       // Store it in SetupService so GraphiqueComponent can access it
       this.setupService.saveEncryptedFile(text);
-      
+
       // Navigate to the graphic component
       this.router.navigate(['/graphique']);
+    } catch (error) {
+      alert(`Erreur lors du chargement du fichier ${file.name}`);
+      console.error(error);
+    } finally {
+      this.isLoadingGraph = false;
+    }
+  }
+
+  // Add method to print graph for a file
+  async printGraph(file: DeviceFile): Promise<void> {
+    this.isLoadingGraph = true;
+    try {
+      let text: string;
+
+      // Check if file is already cached
+      if (this.downloadedFiles.has(file.name)) {
+        text = this.downloadedFiles.get(file.name)!;
+        console.log('Using cached file:', file.name);
+      } else {
+        // Download the file content if not cached
+        console.log('Downloading file:', file.name);
+        const blob = await this.fileService.downloadFile(file);
+        text = await blob.text();
+
+        // Cache the file content for future use
+        this.downloadedFiles.set(file.name, text);
+      }
+
+      console.log('File content length:', text.length);
+      console.log('First 200 chars:', text.substring(0, 200));
+
+      if (!text || text.trim().length === 0) {
+        alert(`Le fichier ${file.name} est vide.`);
+        return;
+      }
+
+      // Store it in SetupService so GraphiqueComponent can access it
+      this.setupService.saveEncryptedFile(text);
+
+      // Navigate to the graphic component and trigger print
+      this.router.navigate(['/graphique']).then(() => {
+        // Wait a bit for the component to load and render, then trigger print
+        setTimeout(() => {
+          // Trigger the actual print functionality from the graphique component
+          window.print();
+        }, 2000); // Wait 2 seconds for charts to render
+      });
     } catch (error) {
       alert(`Erreur lors du chargement du fichier ${file.name}`);
       console.error(error);
@@ -139,7 +208,38 @@ export class MainComponent implements OnInit {
     await this.loadFiles(true);
   }
 
+  // Check if files have changed (by comparing names and sizes)
+  private haveFilesChanged(oldFiles: DeviceFile[], newFiles: DeviceFile[]): boolean {
+    if (oldFiles.length !== newFiles.length) {
+      return true;
+    }
+
+    for (let i = 0; i < oldFiles.length; i++) {
+      const oldFile = oldFiles[i];
+      const newFile = newFiles.find(f => f.name === oldFile.name);
+
+      if (!newFile || newFile.sizeBytes !== oldFile.sizeBytes) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   openSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  // Extract date from filename (format: CST_STU_003_20251117_1052.txt)
+  extractDateFromFilename(filename: string): string {
+    const dateMatch = filename.match(/(\d{8})/);
+    if (dateMatch) {
+      const dateStr = dateMatch[1];
+      const year = dateStr.substring(0, 4);
+      const month = dateStr.substring(4, 6);
+      const day = dateStr.substring(6, 8);
+      return `${day}/${month}/${year}`;
+    }
+    return filename; // fallback to original filename if no date found
   }
 }

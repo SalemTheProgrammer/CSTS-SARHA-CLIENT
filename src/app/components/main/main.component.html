@@ -1,10 +1,10 @@
 <div class="container">
   <div class="card">
     <div class="header">
-      <h1>Sarha - Fichiers de l'appareil</h1>
+      <h1>Fichiers de l'appareil</h1>
       <div class="header-actions">
         <button (click)="openSettings()" class="btn-settings" title="Paramètres">
-          ⚙️
+          Paramètres
         </button>
         <button (click)="refresh()" class="btn-refresh" [disabled]="isLoading || isDownloading">
           {{ isLoading ? 'Chargement...' : 'Actualiser' }}
@@ -45,14 +45,14 @@
       <table>
         <thead>
           <tr>
-            <th>Nom du fichier</th>
+            <th>Date</th>
             <th>Taille</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let file of files">
-            <td class="file-name">{{ file.name }}</td>
+            <td class="file-name">{{ extractDateFromFilename(file.name) }}</td>
             <td class="file-size">{{ file.size }}</td>
             <td class="actions">
               <button (click)="downloadFile(file)" class="btn-download">
@@ -61,6 +61,10 @@
               <!-- Add the Voir button next to Télécharger -->
               <button (click)="viewGraph(file)" class="btn-view" [disabled]="isLoadingGraph">
                 {{ isLoadingGraph ? 'Chargement...' : 'Voir' }}
+              </button>
+              <!-- Add the Imprimer button next to Voir -->
+              <button (click)="printGraph(file)" class="btn-print" [disabled]="isLoadingGraph">
+                🖨️ Imprimer
               </button>
             </td>
           </tr>

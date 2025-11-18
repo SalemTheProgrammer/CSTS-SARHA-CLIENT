@@ -9,6 +9,7 @@ import { computeTotalDistance } from './graphique-distance.util';
 import { paginate } from './graphique-paginate.util';
 
 import { SetupService } from '../../services/setup.service';
+import { ChartSettingsService, ChartSettings } from '../../services/chart-settings.service';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -25,6 +26,7 @@ export class GraphiqueComponent implements OnInit {
 
   data: MareeRow[] = [];
   spliteddata: MareeRow[][] = [];
+  chartSettings: ChartSettings;
 
   // Global stats (no header/company fields anymore)
   startDate: string | null = null;
@@ -39,6 +41,10 @@ export class GraphiqueComponent implements OnInit {
   asvNumber: string | null = null;
   callSign: string | null = null;
   maree: string | null = null;
+
+  // Print header info
+  printDate: string = '';
+  printTime: string = '';
 
   private readonly invalidTempSentinel = -127;
 
@@ -59,8 +65,11 @@ export class GraphiqueComponent implements OnInit {
 
   constructor(
     private setupService: SetupService,
+    private chartSettingsService: ChartSettingsService,
     private router: Router
-  ) {}
+  ) {
+    this.chartSettings = this.chartSettingsService.getSettings();
+  }
 
   async ngOnInit(): Promise<void> {
     const encryptedFile = this.setupService.getEncryptedFile();
@@ -119,7 +128,8 @@ export class GraphiqueComponent implements OnInit {
     this.distance = computeTotalDistance(this.data);
 
     const dataFilter = [...this.data];
-    this.spliteddata = await paginate(dataFilter, 1440 * 4);
+    // Use pointsPerPage from settings
+    this.spliteddata = await paginate(dataFilter, this.chartSettings.pointsPerPage);
 
     let lastRow: MareeRow | undefined;
     this.spliteddata.forEach((page) => {
@@ -318,16 +328,21 @@ export class GraphiqueComponent implements OnInit {
     
     console.log('Canvas element found:', canvasId);
     
-    // Create multi-line labels: [date, time]
-    const labels = data.map((entry) => [entry.Date, entry.TimeOfDay]);
+    // Apply display step from settings
+    const step = this.chartSettings.displayStep;
+    const filteredData = data.filter((_, index) => index % step === 0);
+    
+    // Create multi-line labels: first line = date, second line = time
+    const labels = filteredData.map((entry) => [entry.Date, entry.TimeOfDay]);
 
     const datasets: any[] = [];
     const lastValid: { [tempKey: string]: number } = {};
+    const lastValidConsigne: { [tempKey: string]: number } = {};
 
-    this.seriesConfig.forEach((cfg) => {
+    this.seriesConfig.forEach((cfg, idx) => {
       const nom = cfg.label;
 
-      const tempSeries = data.map((entry) => {
+      const tempSeries = filteredData.map((entry) => {
         const raw = (entry as any)[cfg.key] as number;
         if (raw !== this.invalidTempSentinel && !isNaN(raw)) {
           lastValid[cfg.key] = raw;
@@ -346,7 +361,39 @@ export class GraphiqueComponent implements OnInit {
           data: tempSeries,
           pointRadius: 0,
           fill: false,
-          borderWidth: 1,
+          borderWidth: 2,
+        });
+      }
+    });
+
+    // Add only the 3 main consignes (A1, A2, A3)
+    const consigneConfig = [
+      { key: 'A1', label: 'Consigne 1', color: '#FF0000' },
+      { key: 'A2', label: 'Consigne 2', color: '#00FF00' },
+      { key: 'A3', label: 'Consigne 3', color: '#0000FF' },
+    ];
+
+    consigneConfig.forEach((cfg) => {
+      const consigneSeries = filteredData.map((entry) => {
+        const raw = (entry as any)[cfg.key] as number;
+        if (!isNaN(raw) && raw !== 0) {
+          lastValidConsigne[cfg.key] = raw;
+          return raw;
+        }
+        return lastValidConsigne[cfg.key] ?? null;
+      });
+
+      const hasValidConsigne = consigneSeries.some(val => val !== null && !isNaN(val as number));
+      
+      if (hasValidConsigne) {
+        datasets.push({
+          label: cfg.label,
+          borderColor: cfg.color,
+          data: consigneSeries,
+          pointRadius: 0,
+          fill: false,
+          borderWidth: 2,
+          borderDash: [5, 5],
         });
       }
     });
@@ -363,6 +410,12 @@ export class GraphiqueComponent implements OnInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+          },
+        },
         scales: {
           x: {
             display: true,
@@ -372,12 +425,31 @@ export class GraphiqueComponent implements OnInit {
               },
               maxRotation: 0,
               minRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 20,
+              autoSkip: false,
+              maxTicksLimit: 30,
+              callback: function(value, index, ticks) {
+                // Show first tick and regular spaced ticks, but hide the very last one
+                const step = Math.ceil(ticks.length / 20) || 1;
+
+                if (index === 0) {
+                  return this.getLabelForValue(value as number);
+                }
+
+                // Do not display the very last label to avoid it being cut at the right edge
+                if (index === ticks.length - 1) {
+                  return '';
+                }
+
+                if (index % step === 0) {
+                  return this.getLabelForValue(value as number);
+                }
+
+                return '';
+              }
             },
             title: {
               display: true,
-              text: 'Date et Heure',
+              text: 'Temps d\u2019enregistrement',
               font: {
                 size: 14,
               },
@@ -385,6 +457,8 @@ export class GraphiqueComponent implements OnInit {
           },
           y: {
             display: true,
+            min: this.chartSettings.tempMin,
+            max: this.chartSettings.tempMax,
             ticks: {
               font: {
                 size: 11,
@@ -405,11 +479,12 @@ export class GraphiqueComponent implements OnInit {
             position: 'top',
             labels: {
               font: {
-                size: 11,
+                size: 10,
               },
-              boxWidth: 20,
-              padding: 10,
+              boxWidth: 15,
+              padding: 8,
             },
+            maxHeight: 100,
           },
           title: {
             display: false,
@@ -419,6 +494,65 @@ export class GraphiqueComponent implements OnInit {
     });
 
     this.charts.push(chart);
+  }
+
+  handlePrint(): void {
+    // Save original title
+    const originalTitle = document.title;
+    
+    // Change title for print
+    document.title = 'CST F3S 2024';
+
+    // Set current date and time for print header
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    this.printDate = `Édité ${day}/${month}/${year}`;
+    this.printTime = `${hours}:${minutes}:${seconds}`;
+
+    // Increase chart resolution for print
+    this.charts.forEach((chart, index) => {
+      const canvas = document.getElementById('chart' + index) as HTMLCanvasElement;
+      if (canvas) {
+        // Set higher resolution for print
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Store original size
+          const originalWidth = canvas.width;
+          const originalHeight = canvas.height;
+          
+          // Increase resolution (2x for better quality)
+          canvas.width = originalWidth * 2;
+          canvas.height = originalHeight * 2;
+          canvas.style.width = originalWidth + 'px';
+          canvas.style.height = originalHeight + 'px';
+          
+          // Scale context to match
+          ctx.scale(2, 2);
+          
+          // Redraw chart
+          chart.resize();
+        }
+      }
+    });
+
+    // Print after a short delay to ensure rendering is complete
+    setTimeout(() => {
+      window.print();
+      
+      // Restore original title and reset resolution after print
+      setTimeout(() => {
+        document.title = originalTitle;
+        this.charts.forEach((chart) => {
+          chart.resize();
+        });
+      }, 100);
+    }, 300);
   }
 
 

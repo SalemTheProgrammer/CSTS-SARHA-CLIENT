@@ -7,7 +7,7 @@
     </div>
 
     <div class="settings-section">
-      <div class="setting-item">
+      <div class="setting-item full-width">
         <label class="setting-label">
           <strong>Dossier de téléchargement</strong>
         </label>
@@ -28,7 +28,7 @@
         </p>
       </div>
 
-      <div class="setting-item">
+      <div class="setting-item full-width">
         <label class="setting-label">
           <input 
             type="checkbox" 
@@ -42,7 +42,86 @@
         </p>
       </div>
 
+      <div class="divider"></div>
+
+      <h2>Paramètres des Graphiques</h2>
+
+      <!-- Pagination Section -->
+      <div class="setting-group full-width">
+        <h3 class="group-title">📊 Pagination des données</h3>
+        <div class="group-content">
+          <div class="setting-item-inline">
+            <label class="setting-label">Nombre de points par page</label>
+            <div class="input-group">
+              <input 
+                type="number" 
+                [(ngModel)]="chartSettings.pointsPerPage" 
+                class="number-input"
+                min="100"
+                step="100"
+              />
+              <span class="input-hint">défaut: 1440</span>
+            </div>
+            <p class="setting-description">Divise les données en plusieurs graphiques</p>
+          </div>
+
+          <div class="setting-item-inline">
+            <label class="setting-label">Pas d'affichage</label>
+            <div class="input-group">
+              <input 
+                type="number" 
+                [(ngModel)]="chartSettings.displayStep" 
+                class="number-input"
+                min="1"
+                step="1"
+              />
+              <span class="input-hint">défaut: 1</span>
+            </div>
+            <p class="setting-description">Affiche 1 point sur X (1 = tous les points)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Temperature Range Section -->
+      <div class="setting-group full-width">
+        <h3 class="group-title">🌡️ Plage de température</h3>
+        <div class="group-content">
+          <div class="setting-item-inline">
+            <label class="setting-label">Température minimum</label>
+            <div class="input-group">
+              <input 
+                type="number" 
+                [(ngModel)]="chartSettings.tempMin" 
+                class="number-input"
+                step="1"
+              />
+              <span class="input-unit">°C</span>
+              <span class="input-hint">défaut: -30°C</span>
+            </div>
+            <p class="setting-description">Limite inférieure de l'axe Y</p>
+          </div>
+
+          <div class="setting-item-inline">
+            <label class="setting-label">Température maximum</label>
+            <div class="input-group">
+              <input 
+                type="number" 
+                [(ngModel)]="chartSettings.tempMax" 
+                class="number-input"
+                step="1"
+              />
+              <span class="input-unit">°C</span>
+              <span class="input-hint">défaut: 50°C</span>
+            </div>
+            <p class="setting-description">Limite supérieure de l'axe Y</p>
+          </div>
+        </div>
+      </div>
+
       <div class="actions">
+        <button (click)="resetChartSettings()" class="btn-reset">
+          Réinitialiser les paramètres graphiques
+        </button>
         <button (click)="saveSettings()" class="btn-save">
           Enregistrer les paramètres
         </button>

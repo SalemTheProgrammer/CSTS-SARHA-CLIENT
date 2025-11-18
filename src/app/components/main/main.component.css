@@ -1,16 +1,17 @@
 .container {
   min-height: 100vh;
   background: white;
-  padding: 20px;
+  padding: 0;
 }
 
 .card {
   background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px;
+  border-radius: 0;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
+  min-height: 100vh;
 }
 
 .header {
@@ -21,7 +22,8 @@
 }
 
 h1 {
-  font-size: 24px;
+  font-size: 32px;
+  font-weight: 700;
   color: #000;
   margin: 0;
   flex: 1;
@@ -34,17 +36,19 @@ h1 {
 }
 
 .btn-settings {
-  padding: 10px 15px;
+  padding: 10px 20px;
   background: #6c757d;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 14px;
   transition: background 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 120px;
+  height: 40px;
 }
 
 .btn-settings:hover {
@@ -155,6 +159,10 @@ th {
   font-size: 14px;
 }
 
+th:last-child {
+  text-align: center;
+}
+
 td {
   padding: 12px;
   border-bottom: 1px solid #dee2e6;
@@ -172,38 +180,67 @@ td {
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 15px;
+  justify-content: center;
 }
 
 .btn-download {
-  padding: 8px 16px;
+  padding: 15px 30px;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 18px;
+  font-weight: 600;
   transition: background 0.3s;
-  background: #000;
+  background: #007bff;
+  min-width: 140px;
 }
 
 .btn-download:hover {
-  background: #333;
+  background: #0056b3;
 }
 
 /* Add styling for the Voir button */
 .btn-view {
-  padding: 8px 16px;
+  padding: 15px 30px;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 18px;
+  font-weight: 600;
   transition: background 0.3s;
-  background: #17a2b8; /* Bootstrap info color */
+  background: #28a745;
+  min-width: 140px;
 }
 
 .btn-view:hover {
-  background: #138496; /* Darker shade for hover */
+  background: #1e7e34;
+}
+
+/* Add styling for the Imprimer button */
+.btn-print {
+  padding: 15px 30px;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  transition: background 0.3s;
+  background: #6f42c1;
+  min-width: 140px;
+}
+
+.btn-print:hover {
+  background: #5a2d91;
+}
+
+.btn-print:disabled,
+.btn-view:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 tbody tr:hover {

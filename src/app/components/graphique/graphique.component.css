@@ -1,12 +1,228 @@
-/* Print styles for landscape mode */
+/* Print footer - hidden on screen, visible on print */
+.print-footer {
+  display: none;
+}
+
+/* Print styles - Force landscape mode and optimize layout */
 @media print {
+  /* Remove all default browser headers and footers */
   @page {
-    size: landscape;
-    margin: 0.5cm;
+    size: A4 landscape;
+    margin: 0mm;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Force hide browser default header/footer */
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  /* Make each chart page fill the full printable height */
+  .chart-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding: 1cm;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    page-break-before: auto !important;
+    break-after: page !important;
+    break-inside: avoid-page !important;
+    width: 100%;
+    position: relative;
+    margin: 0 !important;
+  }
+
+  /* Content area should flex-grow to push footer down */
+  .chart-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Push footer to bottom of printed page */
+  .print-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #000;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+
+  .print-footer-left {
+    flex: 1;
+    text-align: left;
+  }
+
+  .print-footer-center {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .print-footer-right {
+    flex: 1;
+    text-align: right;
   }
   
+  * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
   body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hide non-printable elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Main container adjustments */
+  .min-h-screen {
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .max-w-7xl {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Chart page rules consolidated above */
+  
+  /* Last chart page should not have page break after */
+  .chart-page:last-of-type {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+  
+  /* Prevent any content from bleeding between pages */
+  .chart-page::after {
+    content: "";
+    display: block;
+    clear: both;
+    page-break-after: always;
+  }
+  
+  .chart-page:last-of-type::after {
+    page-break-after: auto;
+  }
+
+  /* Remove decorative styles for print */
+  .bg-white,
+  .border,
+  .rounded-lg,
+  .shadow {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+  }
+
+  /* Chart page padding already defined above */
+
+  /* Table container - optimize for landscape */
+  .mb-6 {
+    margin-bottom: 15px !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  .overflow-x-auto {
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Table styling for print */
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto 15px auto !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    font-size: 9px !important;
+  }
+
+  table th,
+  table td {
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+
+  /* Ensure table borders are fully black */
+  .border-black {
+    border-color: #000 !important;
+  }
+
+  /* Make table container have left/right spacing */
+  .overflow-x-auto {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+
+  /* Chart container - optimize for landscape A4 */
+  .w-full.max-w-5xl {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  /* Ensure chart container is centered and not affected by table margins */
+  .chart-content .w-full.max-w-5xl {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Canvas sizing for landscape print - high quality */
+  canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 500px !important;
+    max-height: 500px !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    display: block !important;
+    margin: 20px auto !important;
+    padding: 15px !important;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
+  /* Ensure proper spacing between elements */
+  .p-6 {
+    padding: 10px !important;
+  }
+
+  .p-4 {
+    padding: 0 !important;
+  }
+
+  /* Remove gaps between pages */
+  .mb-6:last-child {
+    margin-bottom: 0 !important;
   }
 }

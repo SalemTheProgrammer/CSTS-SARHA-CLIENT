@@ -150,7 +150,10 @@ export class PrintService {
     });
 
     const distance = computeTotalDistance(data);
-    const pages = await paginate([...data], chartSettings.pointsPerPage);
+
+    // Adjust effective points per page based on display step (same as graphique component)
+    const effectivePointsPerPage = chartSettings.pointsPerPage * chartSettings.displayStep;
+    const pages = await paginate([...data], effectivePointsPerPage);
 
     let lastRow: MareeRow | undefined;
     pages.forEach((page) => {
@@ -520,8 +523,27 @@ export class PrintService {
   }
 
   private createChart(canvas: HTMLCanvasElement, data: MareeRow[], chartSettings: ChartSettings, sensorNames: { [key: string]: string } = {}): void {
-    const step = chartSettings.displayStep;
-    let filteredData = data.filter((_, index) => index % step === 0);
+    // Apply display step from settings (in minutes)
+    const stepMinutes = chartSettings.displayStep;
+
+    // Time-based filtering: keep points at stepMinutes intervals
+    let filteredData: MareeRow[] = [];
+    if (data.length > 0) {
+      // Always include the first point
+      filteredData.push(data[0]);
+      let lastIncludedTime = formatDate(data[0].Date, data[0].TimeOfDay).getTime();
+
+      for (let i = 1; i < data.length; i++) {
+        const currentTime = formatDate(data[i].Date, data[i].TimeOfDay).getTime();
+        const timeDiffMinutes = (currentTime - lastIncludedTime) / (1000 * 60);
+
+        // Include this point if enough time has passed
+        if (timeDiffMinutes >= stepMinutes) {
+          filteredData.push(data[i]);
+          lastIncludedTime = currentTime;
+        }
+      }
+    }
 
     // Filter out consecutive duplicates (same Date and Time)
     const uniqueData: MareeRow[] = [];

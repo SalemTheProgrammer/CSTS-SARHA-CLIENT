@@ -118,6 +118,9 @@ export class GraphiqueComponent implements OnInit {
       console.warn('Failed to load AppConfig for header fields', e);
     }
 
+    // Reload chart settings in case they were changed in settings page
+    this.chartSettings = this.chartSettingsService.getSettings();
+
     if (this.graphiqueDataService.hasData()) {
       this.restoreFromState();
     } else {
@@ -145,7 +148,11 @@ export class GraphiqueComponent implements OnInit {
     this.sensorCount = state.sensorCount;
     this.activeSensors = state.activeSensors;
 
-    // Re-render charts
+    // Destroy existing charts before re-rendering with new settings
+    this.charts.forEach((c) => c.destroy());
+    this.charts = [];
+
+    // Re-render charts with current settings
     setTimeout(() => {
       this.createChartsChunked(0);
     }, 100);
@@ -238,8 +245,14 @@ export class GraphiqueComponent implements OnInit {
     }
 
     const dataFilter = [...this.data];
-    // Use pointsPerPage from settings
-    this.spliteddata = await paginate(dataFilter, this.chartSettings.pointsPerPage);
+
+    // Adjust effective points per page based on display step
+    // If displayStep = 60 (1 hour), we want each chart to cover 60x more time
+    // to maintain a consistent number of displayed points per chart
+    const effectivePointsPerPage = this.chartSettings.pointsPerPage * this.chartSettings.displayStep;
+    console.log(`Pagination: pointsPerPage=${this.chartSettings.pointsPerPage}, displayStep=${this.chartSettings.displayStep}, effective=${effectivePointsPerPage}`);
+
+    this.spliteddata = await paginate(dataFilter, effectivePointsPerPage);
 
     let lastRow: MareeRow | undefined;
     this.spliteddata.forEach((page) => {
@@ -458,12 +471,29 @@ export class GraphiqueComponent implements OnInit {
       return;
     }
 
-    // Apply display step from settings
-    const step = this.chartSettings.displayStep;
-    console.log(`Chart ${index}: Applying displayStep=${step} to ${data.length} data points`);
+    // Apply display step from settings (in minutes)
+    const stepMinutes = this.chartSettings.displayStep;
+    console.log(`Chart ${index}: Applying displayStep=${stepMinutes} minutes to ${data.length} data points`);
 
-    let filteredData = data.filter((_, index) => index % step === 0);
-    console.log(`  After step filtering: ${filteredData.length} points remaining`);
+    // Time-based filtering: keep points at stepMinutes intervals
+    let filteredData: MareeRow[] = [];
+    if (data.length > 0) {
+      // Always include the first point
+      filteredData.push(data[0]);
+      let lastIncludedTime = formatDate(data[0].Date, data[0].TimeOfDay).getTime();
+
+      for (let i = 1; i < data.length; i++) {
+        const currentTime = formatDate(data[i].Date, data[i].TimeOfDay).getTime();
+        const timeDiffMinutes = (currentTime - lastIncludedTime) / (1000 * 60);
+
+        // Include this point if enough time has passed
+        if (timeDiffMinutes >= stepMinutes) {
+          filteredData.push(data[i]);
+          lastIncludedTime = currentTime;
+        }
+      }
+    }
+    console.log(`  After ${stepMinutes}-minute interval filtering: ${filteredData.length} points remaining`);
 
     // Check if we have any valid temperature data in the filtered set
     const sampleTemps = filteredData.slice(0, 10).map(d => ({
@@ -614,41 +644,98 @@ export class GraphiqueComponent implements OnInit {
         ctx.lineWidth = 0.5;
         ctx.stroke();
 
-        let lastDate = '';
+        // Find all midnight boundaries for day changes
+        if (xValues.length === 0) {
+          ctx.restore();
+          return;
+        }
+
+        // Get the time range displayed in the chart
+        const startTime = xValues[0].getTime();
+        const endTime = xValues[xValues.length - 1].getTime();
+
+        // Find all midnight (00:00) timestamps in the range
+        const midnights: { timestamp: number; date: string }[] = [];
+
+        // Start from the first data point's date at midnight
+        const firstDate = new Date(xValues[0]);
+        firstDate.setHours(0, 0, 0, 0);
+
+        // If the first point is after midnight, we need to include that day's midnight
+        if (firstDate.getTime() < startTime) {
+          // Move to next midnight
+          firstDate.setDate(firstDate.getDate() + 1);
+        }
+
+        // Collect all midnights in the range
+        let currentMidnight = new Date(firstDate);
+        while (currentMidnight.getTime() <= endTime) {
+          if (currentMidnight.getTime() >= startTime && currentMidnight.getTime() <= endTime) {
+            const day = String(currentMidnight.getDate()).padStart(2, '0');
+            const month = String(currentMidnight.getMonth() + 1).padStart(2, '0');
+            const year = currentMidnight.getFullYear();
+            midnights.push({
+              timestamp: currentMidnight.getTime(),
+              date: `${day}/${month}/${year}`
+            });
+          }
+          currentMidnight.setDate(currentMidnight.getDate() + 1);
+        }
+
+        // Draw the first day (from start to first midnight, or to end if no midnight)
         let currentDayStart = xAxis.left;
+        const firstDay = new Date(xValues[0]);
+        const day = String(firstDay.getDate()).padStart(2, '0');
+        const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+        const year = firstDay.getFullYear();
+        const firstDateStr = `${day}/${month}/${year}`;
 
-        // Iterate to find day boundaries
-        filteredData.forEach((entry, i) => {
-          if (entry.Date !== lastDate) {
-            // Use timestamp to get pixel position
-            const xPos = xAxis.getPixelForValue(xValues[i].getTime());
+        if (midnights.length > 0) {
+          // Draw first partial day
+          const firstMidnightPos = xAxis.getPixelForValue(midnights[0].timestamp);
+          const centerX = (currentDayStart + firstMidnightPos) / 2;
+          if (centerX >= xAxis.left && centerX <= xAxis.right) {
+            ctx.fillText(firstDateStr, centerX, yPos + 35);
+          }
 
-            if (lastDate !== '') {
-              const centerX = (currentDayStart + xPos) / 2;
-              // Only draw if visible
-              if (centerX >= xAxis.left && centerX <= xAxis.right) {
-                ctx.fillText(lastDate, centerX, yPos + 35);
-              }
+          // Draw midnight separator
+          ctx.beginPath();
+          ctx.moveTo(firstMidnightPos, yPos);
+          ctx.lineTo(firstMidnightPos, yPos + 20);
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 1;
+          ctx.stroke();
 
-              // Draw vertical separator for day change
+          currentDayStart = firstMidnightPos;
+
+          // Draw remaining days
+          for (let i = 0; i < midnights.length; i++) {
+            const nextBoundary = i < midnights.length - 1
+              ? xAxis.getPixelForValue(midnights[i + 1].timestamp)
+              : xAxis.right;
+
+            const centerX = (currentDayStart + nextBoundary) / 2;
+            if (centerX >= xAxis.left && centerX <= xAxis.right) {
+              ctx.fillText(midnights[i].date, centerX, yPos + 35);
+            }
+
+            if (i < midnights.length - 1) {
+              // Draw midnight separator
               ctx.beginPath();
-              ctx.moveTo(xPos, yPos);
-              ctx.lineTo(xPos, yPos + 20);
+              ctx.moveTo(nextBoundary, yPos);
+              ctx.lineTo(nextBoundary, yPos + 20);
               ctx.strokeStyle = '#000';
               ctx.lineWidth = 1;
               ctx.stroke();
             }
 
-            currentDayStart = xPos;
-            lastDate = entry.Date;
+            currentDayStart = nextBoundary;
           }
-        });
-
-        // Draw last day
-        if (lastDate !== '') {
-          const centerX = (currentDayStart + xAxis.right) / 2;
+        } else {
+          // No midnights in range, just draw the single day
+          const centerX = (xAxis.left + xAxis.right) / 2;
           if (centerX >= xAxis.left && centerX <= xAxis.right) {
-            ctx.fillText(lastDate, centerX, yPos + 35);
+            ctx.fillText(firstDateStr, centerX, yPos + 35);
           }
         }
 

@@ -13,6 +13,11 @@
   animation: spin 1s linear infinite;
 }
 
+/* Settings icon hover rotation */
+.hover\:rotate-90:hover {
+  transform: rotate(90deg);
+}
+
 /* Custom scrollbar for consistency */
 ::-webkit-scrollbar {
   width: 8px;

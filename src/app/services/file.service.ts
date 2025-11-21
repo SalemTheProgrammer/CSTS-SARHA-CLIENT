@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { fetch } from '@tauri-apps/plugin-http';
-import { environment } from '../../environments/environment';
+import { DeviceService } from './device.service';
 
 export interface DeviceFile {
   name: string;
@@ -13,9 +13,17 @@ export interface DeviceFile {
   providedIn: 'root'
 })
 export class FileService {
-  private readonly DEVICE_URL = environment.deviceUrl;
   private cachedFiles: DeviceFile[] | null = null;
   private lastFetchTime: number = 0;
+
+  constructor(private deviceService: DeviceService) { }
+
+  /**
+   * Get the current device URL dynamically
+   */
+  private getDeviceUrl(): string {
+    return this.deviceService.getApiUrl();
+  }
 
   async fetchFileList(forceRefresh: boolean = false): Promise<DeviceFile[]> {
     const now = Date.now();
@@ -25,7 +33,8 @@ export class FileService {
       return this.cachedFiles;
     }
     try {
-      const response = await fetch(this.DEVICE_URL, {
+      const deviceUrl = this.getDeviceUrl();
+      const response = await fetch(deviceUrl, {
         method: 'GET'
       });
 
@@ -53,6 +62,7 @@ export class FileService {
     const doc = parser.parseFromString(html, 'text/html');
     const rows = doc.querySelectorAll('table tr');
     const files: DeviceFile[] = [];
+    const deviceUrl = this.getDeviceUrl();
 
     rows.forEach((row, index) => {
       if (index === 0) return; // Skip header row
@@ -69,7 +79,7 @@ export class FileService {
             name,
             size: sizeText,
             sizeBytes,
-            downloadUrl: `${this.DEVICE_URL}/download?file=${encodeURIComponent(name)}`
+            downloadUrl: `${deviceUrl}/download?file=${encodeURIComponent(name)}`
           });
         }
       }
@@ -96,11 +106,13 @@ export class FileService {
 
   async downloadFile(file: DeviceFile): Promise<Blob> {
     try {
+      const deviceUrl = this.getDeviceUrl();
+
       // Le serveur utilise un formulaire POST avec le paramètre "download"
       const formData = new FormData();
       formData.append('download', `download_${file.name}`);
 
-      const response = await fetch(this.DEVICE_URL, {
+      const response = await fetch(deviceUrl, {
         method: 'POST',
         body: formData
       });

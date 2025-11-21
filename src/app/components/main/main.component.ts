@@ -80,12 +80,10 @@ export class MainComponent implements OnInit {
 
             this.updatePagination();
         } catch (error) {
-            // Only show error if we don't have any files (e.g. network error on first load)
-            // If we have cached files or local files, just log the error
-            if (this.files.length === 0) {
-                this.errorMessage = 'Erreur lors du chargement des fichiers';
-            }
             console.error('Error loading files:', error);
+
+            // Connection lost - redirect to connection screen
+            this.router.navigate(['/connection']);
         } finally {
             this.isLoading = false;
         }

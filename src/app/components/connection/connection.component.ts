@@ -2,9 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DeviceService, ApInfo } from '../../services/device.service';
-
-type ConnectionMode = 'wifi' | 'ap' | 'configuring';
+import { DeviceService } from '../../services/device.service';
 
 @Component({
   selector: 'app-connection',
@@ -18,16 +16,12 @@ export class ConnectionComponent implements OnInit {
   isConnecting = true;
   connectionFailed = false;
   connectionSuccess = false;
-  connectionMode: ConnectionMode = 'wifi';
 
   // API configuration
   showApiConfig = false;
   customApiUrl = '';
   apiUrlError = '';
   currentApiUrl = '';
-
-  // Access Point info
-  apInfo: ApInfo | null = null;
 
   constructor(
     private deviceService: DeviceService,
@@ -41,10 +35,9 @@ export class ConnectionComponent implements OnInit {
   }
 
   /**
-   * Try WiFi connection first (default behavior)
+   * Try WiFi connection
    */
   async tryWifiConnection(): Promise<void> {
-    this.connectionMode = 'wifi';
     this.isConnecting = true;
     this.connectionFailed = false;
     this.connectionSuccess = false;
@@ -64,32 +57,10 @@ export class ConnectionComponent implements OnInit {
   }
 
   /**
-   * Switch to Access Point mode
-   */
-  switchToApMode(): void {
-    this.connectionMode = 'ap';
-    this.connectionFailed = false;
-    this.apInfo = this.deviceService.getDeviceApInfo();
-  }
-
-  /**
-   * Return to WiFi mode
-   */
-  backToWifi(): void {
-    this.connectionMode = 'wifi';
-    this.apInfo = null;
-    this.tryWifiConnection();
-  }
-
-  /**
    * Retry connection
    */
   retry(): void {
-    if (this.connectionMode === 'wifi') {
-      this.tryWifiConnection();
-    } else {
-      this.backToWifi();
-    }
+    this.tryWifiConnection();
   }
 
   /**

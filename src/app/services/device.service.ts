@@ -2,12 +2,6 @@ import { Injectable } from '@angular/core';
 import { fetch } from '@tauri-apps/plugin-http';
 import { environment } from '../../environments/environment';
 
-export interface ApInfo {
-  ssid: string;
-  password: string;
-  instructions: string[];
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -75,24 +69,5 @@ export class DeviceService {
       console.error('Device connection check failed:', error);
       return false;
     }
-  }
-
-  /**
-   * Get device Access Point information
-   */
-  getDeviceApInfo(): ApInfo {
-    return {
-      ssid: environment.deviceApSsid,
-      password: environment.deviceApPassword,
-      instructions: [
-        'Open your WiFi settings',
-        `Look for network: ${environment.deviceApSsid}`,
-        environment.deviceApPassword
-          ? `Enter password: ${environment.deviceApPassword}`
-          : 'No password required',
-        'Connect to the network',
-        'Return to this app to configure the device'
-      ]
-    };
   }
 }

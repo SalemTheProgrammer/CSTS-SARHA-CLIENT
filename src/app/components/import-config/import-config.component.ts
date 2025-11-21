@@ -13,6 +13,7 @@ import { ConfigService } from '../../services/config.service';
 export class ImportConfigComponent {
   errorMessage = '';
   isLoading = false;
+  isDragging = false;
 
   constructor(
     private configService: ConfigService,
@@ -29,12 +30,38 @@ export class ImportConfigComponent {
 
     try {
       const text = await file.text();
-      // Validate JSON format
-      JSON.parse(text);
       await this.configService.saveConfig(text);
       this.router.navigate(['/connection']);
     } catch (error) {
-      this.errorMessage = 'Erreur lors de l\'importation du fichier. Vérifiez le format JSON.';
+      this.errorMessage = 'Erreur lors de l\'importation du fichier. Le contenu est invalide ou corrompu.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = false;
+  }
+
+  async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.isDragging = false;
+    if (!event.dataTransfer || event.dataTransfer.files.length === 0) return;
+    const file = event.dataTransfer.files[0];
+    this.isLoading = true;
+    this.errorMessage = '';
+    try {
+      const text = await file.text();
+      await this.configService.saveConfig(text);
+      this.router.navigate(['/connection']);
+    } catch (error) {
+      this.errorMessage = 'Erreur lors de l\'importation du fichier. Le contenu est invalide ou corrompu.';
     } finally {
       this.isLoading = false;
     }

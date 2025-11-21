@@ -1,91 +1,116 @@
 <div class="min-h-screen bg-white p-4">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="bg-white border border-gray-300 rounded-lg shadow p-4 mb-4 print:hidden">
-      <div class="flex justify-end items-center mb-4">
-        <button 
-          type="button" 
-          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition border border-gray-400"
-          (click)="goBack()">
-          ← Retour
-        </button>
-      </div>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div
+            class="text-center px-6 pt-8 pb-6 bg-white border-b border-gray-100 relative rounded-t-2xl mb-6 print:hidden shadow-sm">
+            <img src="assets/cst.png" alt="Logo" class="w-16 h-16 object-contain mb-4 mx-auto">
+            <h1 class="text-2xl font-semibold text-gray-900 mb-2 leading-tight">Visualisation graphique</h1>
+            <p class="text-sm text-gray-500 m-0 leading-relaxed">Analyse détaillée des températures</p>
+
+            <div class="absolute top-6 right-6 flex gap-2">
+                <button (click)="handlePrint()"
+                    class="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 transition-all duration-200 font-bold text-xs border border-purple-100 cursor-pointer flex items-center gap-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="currentColor" class="w-4 h-4">
+                        <path
+                            d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" />
+                    </svg>
+                    Imprimer
+                </button>
+                <button (click)="goBack()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-bold text-xs border border-gray-200 cursor-pointer flex items-center gap-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                    Retour
+                </button>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div *ngFor="let item of spliteddata; let index = index"
+            class="chart-page bg-white border border-gray-300 rounded-lg shadow p-6 mb-6">
+
+            <!-- Content wrapper to push footer down -->
+            <div class="chart-content">
+                <!-- Centered title for each page -->
+                <h2 class="text-xl font-semibold text-center mt-5 mb-4">Relevé de température</h2>
+
+                <!-- Data Table -->
+                <div [id]="'dataTable'+index" class="mb-6 overflow-x-auto">
+                    <table class="w-full max-w-5xl mx-auto text-xs border-collapse">
+                        <thead>
+                            <tr>
+                                <th colspan="4" class="border border-black bg-gray-200 text-black text-center py-2">
+                                    NAVIRE</th>
+                                <th colspan="4" class="border border-black bg-gray-200 text-black text-center py-2">
+                                    MAREE</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-black bg-white">
+                            <!-- Row 1: Société / Nom du Navire / Num Maree / Date départ -->
+                            <tr>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Société :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ company || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nom du Navire :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ shipName || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Num Maree :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ vesselNumber || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date départ :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ startDate || '—' }}</td>
+                            </tr>
+
+                            <!-- Row 2: Agrément Num. / Numéro ASV / Nb Point / Date d'Arrivée -->
+                            <tr>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Agrément Num. :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ maree || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Numéro ASV :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ asvNumber || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nb Point :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ data.length }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date d'Arrivée :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ endDate || '—' }}</td>
+                            </tr>
+
+                            <!-- Row 3: Immatriculation / Indicatif d'appel / Trajet Mille Marin / Durée -->
+                            <tr>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Immatriculation :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ registration || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Indicatif d'appel :
+                                </th>
+                                <td class="border border-black text-center px-3 py-2">{{ callSign || '—' }}</td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Trajet Mille Marin :
+                                </th>
+                                <td class="border border-black text-center px-3 py-2">{{ distance | number:'1.3-3' }}
+                                </td>
+                                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Durée :</th>
+                                <td class="border border-black text-center px-3 py-2">{{ duration || '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Data Matrix removed as requested -->
+
+                <!-- Chart Canvas -->
+                <div class="w-full max-w-5xl mx-auto">
+                    <canvas [id]="'chart'+index" class="w-full block mx-auto" style="height: 400px; max-height: 400px;">
+                    </canvas>
+                </div>
+            </div>
+
+            <!-- Print Footer (only visible when printing) -->
+            <div class="print-footer">
+                <div class="print-footer-left">
+                    {{ printDate }}&nbsp;&nbsp;&nbsp;{{ printTime }}
+                </div>
+                <div class="print-footer-center"></div>
+                <div class="print-footer-right">
+                    © CST F3S 2024 Page {{ index + 1 }}/{{ spliteddata.length }}
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <!-- Charts -->
-    <div *ngFor="let item of spliteddata; let index = index" 
-         class="chart-page bg-white border border-gray-300 rounded-lg shadow p-6 mb-6">
-
-      <!-- Content wrapper to push footer down -->
-      <div class="chart-content">
-        <!-- Centered title for each page -->
-        <h2 class="text-xl font-semibold text-center mt-6 mb-6">Relevé de température</h2>
-
-        <!-- Data Table -->
-        <div [id]="'dataTable'+index" class="mb-6 overflow-x-auto">
-          <table class="w-full max-w-5xl mx-auto text-xs border-collapse">
-            <thead>
-              <tr>
-                <th colspan="4" class="border border-black bg-gray-200 text-black text-center py-2">MAREE</th>
-                <th colspan="2" class="border border-black bg-gray-200 text-black text-center py-2">NAVIRE</th>
-              </tr>
-            </thead>
-            <tbody class="text-black bg-white">
-              <tr>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Société :</th>
-                <td colspan="3" class="border border-black text-center px-3 py-2">{{ company }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nom du Navire :</th>
-                <td class="border border-black text-center px-3 py-2">{{ shipName }}</td>
-              </tr>
-              <tr>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Marée Numéro :</th>
-                <td class="border border-black text-center px-3 py-2">{{ maree }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date de Départ :</th>
-                <td class="border border-black text-center px-3 py-2">{{ startDate }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Immatriculation :</th>
-                <td class="border border-black text-center px-3 py-2">{{ registration }}</td>
-              </tr>
-              <tr>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Nombre de Points :</th>
-                <td class="border border-black text-center px-3 py-2">{{ data.length }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Date d'arrivée :</th>
-                <td class="border border-black text-center px-3 py-2">{{ endDate }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Numero ASV :</th>
-                <td class="border border-black text-center px-3 py-2">{{ asvNumber }}</td>
-              </tr>
-              <tr>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Trajet Mille Marin :</th>
-                <td class="border border-black text-center px-3 py-2">{{ distance }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Durée :</th>
-                <td class="border border-black text-center px-3 py-2">{{ duration }}</td>
-                <th class="border border-black bg-cyan-200 text-right px-3 py-2">Indicatif D'appel :</th>
-                <td class="border border-black text-center px-3 py-2">{{ callSign }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Chart Canvas -->
-        <div class="w-full max-w-5xl mx-auto">
-          <canvas 
-            [id]="'chart'+index" 
-            class="w-full block mx-auto"
-            style="height: 500px; max-height: 500px;">
-          </canvas>
-        </div>
-      </div>
-
-      <!-- Print Footer (only visible when printing) -->
-      <div class="print-footer">
-        <div class="print-footer-left">
-          {{ printDate }}&nbsp;&nbsp;&nbsp;{{ printTime }}
-        </div>
-        <div class="print-footer-center"></div>
-        <div class="print-footer-right">
-          © CST F3S 2024 Page {{ index + 1 }}/{{ spliteddata.length }}
-        </div>
-      </div>
-    </div>
-
-  </div>
 </div>

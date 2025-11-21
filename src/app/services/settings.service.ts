@@ -19,6 +19,11 @@ export class SettingsService {
 
   constructor() {
     this.loadSettings();
+    // Check session storage to persist download state across page reloads (but not app restarts)
+    const sessionDownloaded = sessionStorage.getItem('sarha_downloaded');
+    if (sessionDownloaded === 'true') {
+      this.hasDownloadedThisSession = true;
+    }
   }
 
   async loadSettings(): Promise<void> {
@@ -58,9 +63,11 @@ export class SettingsService {
 
   markAsDownloaded(): void {
     this.hasDownloadedThisSession = true;
+    sessionStorage.setItem('sarha_downloaded', 'true');
   }
 
   resetDownloadFlag(): void {
     this.hasDownloadedThisSession = false;
+    sessionStorage.removeItem('sarha_downloaded');
   }
 }

@@ -5,6 +5,17 @@ import { StorageService } from './storage.service';
 export interface AppConfig {
   deviceIp: string;
   deviceName: string;
+  numeroArgument?: string | number;
+  numeroAgrument?: string | number;
+  nom?: string;
+  societe?: string;
+  numeroNavire?: string;
+  immatricule?: string;
+  numeroASV?: string;
+  indicatifAppel?: string;
+  portAttache?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 @Injectable({
@@ -26,7 +37,21 @@ export class ConfigService {
   }
 
   async saveConfig(configText: string): Promise<void> {
-    const configObj = JSON.parse(configText);
+    let configObj: AppConfig;
+
+    // Prefer plain JSON when possible to avoid false positives with base64 validation
+    try {
+      const parsed = JSON.parse(configText);
+      configObj = parsed as AppConfig;
+    } catch (_jsonErr) {
+      // Not valid JSON; try to treat as encrypted payload
+      if (!this.cryptoService.isValidEncryptedFormat(configText)) {
+        throw new Error('Input is neither valid JSON nor a valid encrypted string.');
+      }
+      const decrypted: any = this.cryptoService.decrypt(configText);
+      configObj = decrypted as AppConfig;
+    }
+
     const encrypted = this.cryptoService.encrypt(configObj);
     await this.storageService.saveEncryptedConfig(encrypted);
     this.config = configObj;

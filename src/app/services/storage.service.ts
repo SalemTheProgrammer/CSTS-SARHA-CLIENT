@@ -16,4 +16,12 @@ export class StorageService {
   async hasConfig(): Promise<boolean> {
     return await invoke<boolean>('has_config');
   }
+
+  async deleteConfig(): Promise<void> {
+    try {
+      await invoke('delete_config');
+    } catch (e) {
+      console.warn('delete_config command not available or failed', e);
+    }
+  }
 }

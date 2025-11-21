@@ -1,15 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
+import 'chartjs-adapter-moment';
 import { MareeRow } from './graphique-types.util';
 import { decryptText } from './graphique-decrypt.util';
 import { formatDate, calculateDuration } from './graphique-datetime.util';
-import { computeTotalDistance } from './graphique-distance.util';
+import { computeTotalDistance, doDistance } from './graphique-distance.util';
 import { paginate } from './graphique-paginate.util';
+// import { CONSIGNES } from './consignes.config'; // Deprecated in favor of settings
 
 import { SetupService } from '../../services/setup.service';
 import { ChartSettingsService, ChartSettings } from '../../services/chart-settings.service';
+import { ConfigService, AppConfig } from '../../services/config.service';
+import { GraphiqueDataService } from '../../services/graphique-data.service';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -17,7 +22,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-graphique',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './graphique.component.html',
   styleUrls: ['./graphique.component.css'],
 })
@@ -33,49 +38,117 @@ export class GraphiqueComponent implements OnInit {
   endDate: string | null = null;
   duration: string | null = null;
   distance = 0;
+  distanceKm = 0;
+  directDistance = 0;
+  directDistanceKm = 0;
+  sensorCount = 0;
 
-  // Header info loaded from encrypted file in SetupService
+  // Header info coming from decrypted AppConfig metadata
   company: string | null = null;
   shipName: string | null = null;
   registration: string | null = null;
   asvNumber: string | null = null;
   callSign: string | null = null;
   maree: string | null = null;
+  portAttache: string | null = null;
+  latitude: number | null = null;
+  longitude: number | null = null;
+  vesselNumber: string | null = null;
+  deviceIp: string | null = null;
 
   // Print header info
   printDate: string = '';
   printTime: string = '';
+  activeSensors: string[] = [];
+  sensorNames: { [key: string]: string } = {};
+
+
 
   private readonly invalidTempSentinel = -127;
 
-  private seriesConfig = [
-    { key: 'Temp1', label: 'Temp1', color: 'rgb(255, 99, 132)' },
-    { key: 'Temp2', label: 'Temp2', color: 'rgb(54, 162, 235)' },
-    { key: 'Temp3', label: 'Temp3', color: '#000' },
-    { key: 'Temp4', label: 'Temp4', color: '#00994C' },
-    { key: 'Temp5', label: 'Temp5', color: '#0000CC' },
-    { key: 'Temp6', label: 'Temp6', color: '#994C00' },
-    { key: 'Temp7', label: 'Temp7', color: '#6600CC' },
-    { key: 'Temp8', label: 'Temp8', color: '#CC00CC' },
-    { key: 'Temp9', label: 'Temp9', color: '#00FFFF' },
-    { key: 'Temp10', label: 'Temp10', color: '#999900' },
-    { key: 'Temp11', label: 'Temp11', color: '#0066CC' },
-    { key: 'Temp12', label: 'Temp12', color: '#FF6666' },
-  ];
+  get activeSensorsDisplay(): string {
+    return this.activeSensors.join(', ') || '—';
+  }
+
+  // Helper for template to check NaN
+  isNaN(val: any): boolean {
+    return isNaN(val);
+  }
+
+  // seriesConfig is now replaced by chartSettings.sensors
 
   constructor(
     private setupService: SetupService,
     private chartSettingsService: ChartSettingsService,
-    private router: Router
+    private router: Router,
+    private configService: ConfigService,
+    private graphiqueDataService: GraphiqueDataService
   ) {
     this.chartSettings = this.chartSettingsService.getSettings();
   }
 
+  private applyConfigMetadata(cfg: AppConfig): void {
+
+    const toStringValue = (value: string | number | undefined | null): string | null => {
+      if (value === undefined || value === null) return null;
+      return typeof value === 'number' ? String(value) : value;
+    };
+
+    this.company = toStringValue(cfg.societe) ?? null;
+    this.shipName = toStringValue(cfg.nom) ?? toStringValue(cfg.deviceName);
+    this.registration = toStringValue(cfg.immatricule);
+    this.vesselNumber = toStringValue(cfg.numeroNavire);
+    this.asvNumber = toStringValue(cfg.numeroASV);
+    this.callSign = toStringValue(cfg.indicatifAppel);
+
+    const mareeValue = cfg.numeroAgrument ?? cfg.numeroArgument;
+    this.maree = toStringValue(mareeValue);
+
+    this.portAttache = toStringValue(cfg.portAttache);
+    this.latitude = cfg.latitude ?? null;
+    this.longitude = cfg.longitude ?? null;
+    this.deviceIp = toStringValue(cfg.deviceIp);
+  }
+
   async ngOnInit(): Promise<void> {
-    const encryptedFile = this.setupService.getEncryptedFile();
-    if (encryptedFile) {
-      await this.loadFromContent(encryptedFile);
+    try {
+      const cfg = await this.configService.loadConfig();
+      this.applyConfigMetadata(cfg);
+    } catch (e) {
+      console.warn('Failed to load AppConfig for header fields', e);
     }
+
+    if (this.graphiqueDataService.hasData()) {
+      this.restoreFromState();
+    } else {
+      const encryptedFile = this.setupService.getEncryptedFile();
+      if (encryptedFile) {
+        await this.loadFromContent(encryptedFile);
+      }
+    }
+  }
+
+  private restoreFromState(): void {
+    const state = this.graphiqueDataService.getState();
+    if (!state) return;
+
+    this.data = state.data;
+    this.spliteddata = state.spliteddata;
+    this.sensorNames = state.sensorNames;
+    this.startDate = state.startDate;
+    this.endDate = state.endDate;
+    this.duration = state.duration;
+    this.distance = state.distance;
+    this.distanceKm = state.distanceKm;
+    this.directDistance = state.directDistance;
+    this.directDistanceKm = state.directDistanceKm;
+    this.sensorCount = state.sensorCount;
+    this.activeSensors = state.activeSensors;
+
+    // Re-render charts
+    setTimeout(() => {
+      this.createChartsChunked(0);
+    }, 100);
   }
 
   async handleFileSelect(event: Event): Promise<void> {
@@ -107,12 +180,9 @@ export class GraphiqueComponent implements OnInit {
       return;
     }
 
-    console.log('Loading content, length:', contents.length);
-
     const parsed = this.parseCSV(contents);
 
     if (!parsed || !parsed.length) {
-      console.error('Failed to parse CSV or no data rows found');
       alert('Le fichier sélectionné est invalide/Vide.');
       return;
     }
@@ -126,6 +196,46 @@ export class GraphiqueComponent implements OnInit {
     });
 
     this.distance = computeTotalDistance(this.data);
+    this.distanceKm = parseFloat((this.distance * 1.852).toFixed(2));
+
+    // Nombre de sonde: count sensors Temp1..Temp12 that have at least one valid value
+    this.activeSensors = [];
+    const sensors = this.chartSettings.sensors || [];
+
+    this.sensorCount = sensors.reduce((count, sensor) => {
+      if (!sensor.enabled) return count; // Skip disabled sensors
+
+      const key = `Temp${sensor.id}`;
+      const hasValid = this.data.some(row => {
+        const val = (row as any)[key] as number;
+        return !isNaN(val) && val !== this.invalidTempSentinel;
+      });
+      if (hasValid) {
+        const sensorName = sensor.label || this.sensorNames[key] || `Temp${sensor.id}`;
+        this.activeSensors.push(sensorName);
+      }
+      return count + (hasValid ? 1 : 0);
+    }, 0);
+
+    // Direct distance between first and last valid coordinate points
+    const coordFilter = this.data.filter(row =>
+      !isNaN(row.Latitude) && !isNaN(row.Longitude) && row.Latitude !== 0 && row.Longitude !== 0
+    );
+    if (coordFilter.length >= 2) {
+      const firstCoord = coordFilter[0];
+      const lastCoord = coordFilter[coordFilter.length - 1];
+      this.directDistance = doDistance(
+        Number(firstCoord.Latitude),
+        Number(firstCoord.Longitude),
+        Number(lastCoord.Latitude),
+        Number(lastCoord.Longitude)
+      );
+      this.directDistance = Math.round(this.directDistance * 1000) / 1000;
+      this.directDistanceKm = parseFloat((this.directDistance * 1.852).toFixed(2));
+    } else {
+      this.directDistance = 0;
+      this.directDistanceKm = 0;
+    }
 
     const dataFilter = [...this.data];
     // Use pointsPerPage from settings
@@ -141,15 +251,37 @@ export class GraphiqueComponent implements OnInit {
 
     this.renderTable(dataFilter);
 
-    console.log('\n=== CREATING CHARTS ===');
-    console.log('Number of chart pages:', this.spliteddata.length);
-    
+    // Save state to service
+    this.graphiqueDataService.setState({
+      data: this.data,
+      spliteddata: this.spliteddata,
+      sensorNames: this.sensorNames,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      duration: this.duration,
+      distance: this.distance,
+      distanceKm: this.distanceKm,
+      directDistance: this.directDistance,
+      directDistanceKm: this.directDistanceKm,
+      sensorCount: this.sensorCount,
+      activeSensors: this.activeSensors
+    });
+
+    // Optimize chart creation by chunking
     setTimeout(() => {
-      this.spliteddata.forEach((page, index) => {
-        console.log(`Creating chart ${index} with ${page.length} data points`);
-        this.createChart(page, index);
-      });
-    }, 300);
+      this.createChartsChunked(0);
+    }, 100);
+  }
+
+  private createChartsChunked(index: number): void {
+    if (index >= this.spliteddata.length) return;
+
+    this.createChart(this.spliteddata[index], index);
+
+    // Process next chart in next tick to avoid freezing UI
+    setTimeout(() => {
+      this.createChartsChunked(index + 1);
+    }, 50);
   }
 
   private resetState(): void {
@@ -159,6 +291,10 @@ export class GraphiqueComponent implements OnInit {
     this.endDate = null;
     this.duration = null;
     this.distance = 0;
+    this.distanceKm = 0;
+    this.directDistance = 0;
+    this.directDistanceKm = 0;
+    this.sensorCount = 0;
 
     this.charts.forEach((c) => c.destroy());
     this.charts = [];
@@ -171,97 +307,90 @@ export class GraphiqueComponent implements OnInit {
     }
 
     const allLines = contents.split('\n');
-    
-    if (allLines.length < 22) {
-      console.error('File does not have enough lines for header data');
-      return null;
+
+    // Find header row
+    let headerRowIndex = -1;
+    // Check first 25 lines
+    for (let i = 0; i < Math.min(allLines.length, 25); i++) {
+      // Check plain text
+      if ((allLines[i].includes('SavingID') && allLines[i].includes('Date')) ||
+        (allLines[i].includes('Date') && allLines[i].includes('Time'))) {
+        headerRowIndex = i;
+        break;
+      }
+      // Check decrypted
+      const decrypted = decryptText(allLines[i]);
+      if ((decrypted.includes('SavingID') && decrypted.includes('Date')) ||
+        (decrypted.includes('Date') && decrypted.includes('Time'))) {
+        headerRowIndex = i;
+        break;
+      }
     }
 
-    const headerLines = [...allLines];
+    if (headerRowIndex === -1) headerRowIndex = 20;
 
-    console.log('=== FILE HEADER DEBUG ===');
-    console.log('Total lines in file:', allLines.length);
-    console.log('\nFirst 22 header lines (encrypted):');
-    for (let i = 0; i < Math.min(22, headerLines.length); i++) {
-      console.log(`Line ${i}:`, headerLines[i]);
+    // Parse header
+    let headerLine = allLines[headerRowIndex];
+    // If header looks encrypted (doesn't have commas or expected keywords), decrypt it
+    if (!headerLine.includes(',') || (!headerLine.includes('Date') && !headerLine.includes('SavingID'))) {
+      headerLine = decryptText(headerLine);
     }
 
-    console.log('\n=== DECRYPTED HEADER INFO ===');
-    
-    // decrypt header/meta info from stored file with safety checks
-    this.company = headerLines[0] ? decryptText(headerLines[0].split(',')[1] || '') : '';
-    console.log('Line 0 - Company:', this.company);
-    
-    this.shipName = headerLines[1] ? decryptText(headerLines[1].split(',')[1] || '') : '';
-    console.log('Line 1 - Ship Name:', this.shipName);
-    
-    this.registration = headerLines[2] ? decryptText(headerLines[2].split(',')[1] || '') : '';
-    console.log('Line 2 - Registration:', this.registration);
-    
-    this.asvNumber = headerLines[3] ? decryptText(headerLines[3].split(',')[1] || '') : '';
-    console.log('Line 3 - ASV Number:', this.asvNumber);
-    
-    this.callSign = headerLines[4] ? decryptText(headerLines[4].split(',')[1] || '') : '';
-    console.log('Line 4 - Call Sign:', this.callSign);
-    
-    this.maree = headerLines[17] ? decryptText(headerLines[17].split(',')[1] || '') : '';
-    console.log('Line 17 - Maree:', this.maree);
+    const headerColumns = headerLine.split(',').map(c => c.trim());
 
-    // Read sensor names from line 20 (CSV header row)
-    console.log('\n=== SENSOR NAMES (Line 20 - CSV Header) ===');
-    if (headerLines[20]) {
-      const decryptedHeaderLine = decryptText(headerLines[20]);
-      console.log('Line 20 (decrypted):', decryptedHeaderLine);
-      
-      const headerColumns = decryptedHeaderLine.split(',');
-      console.log('Header columns:', headerColumns);
-      
-      // Columns 3-14 should be the 12 temperature sensor names
-      // Based on the data structure: index 0=row#, 1=date, 2=time, 3-14=Temp1-12
-      for (let i = 0; i < 12; i++) {
-        const columnIndex = 3 + i;
-        if (headerColumns[columnIndex]) {
-          const sensorName = headerColumns[columnIndex].trim();
-          console.log(`  -> Sensor ${i + 1} (column ${columnIndex}):`, sensorName);
-          
-          if (sensorName && sensorName !== '**') {
-            this.seriesConfig[i].label = sensorName;
-          }
+    // Map column names to indices
+    const colMap: { [key: string]: number } = {};
+    headerColumns.forEach((col, idx) => {
+      colMap[col] = idx;
+    });
+
+    // Extract sensor names (indices 3 to 14)
+    this.sensorNames = {};
+    for (let i = 1; i <= 12; i++) {
+      const colIdx = 2 + i; // 3 to 14
+      if (colIdx < headerColumns.length) {
+        const colName = headerColumns[colIdx];
+        if (colName && colName.length > 0) {
+          this.sensorNames[`Temp${i}`] = colName;
         }
       }
     }
 
-    console.log('\n=== UPDATED SERIES CONFIG ===');
-    console.log(this.seriesConfig);
-
-    const lines = allLines.slice(22); // skip header/meta lines completely
-    if (!lines.length) return null;
-
-    const dataLines = lines.filter((line) => line.length > 0);
-
-    console.log('\n=== DATA ROWS ===');
-    console.log('Total data lines:', dataLines.length);
-    console.log('First 3 data lines (encrypted):');
-    for (let i = 0; i < Math.min(3, dataLines.length); i++) {
-      console.log(`Data line ${i}:`, dataLines[i]);
-    }
+    const dataLines = allLines.slice(headerRowIndex + 1).filter(l => l.trim().length > 0);
 
     const data: MareeRow[] = dataLines.map((line, index) => {
-      const decryptedLine = decryptText(line);
-      
-      if (index < 3) {
-        console.log(`\nData line ${index} (decrypted):`, decryptedLine);
+      let values: string[];
+      // Check if line needs decryption
+      // If it contains a date format like dd/mm/yyyy, it's likely plain text
+      if (line.includes(',') && line.match(/\d+\/\d+\/\d+/)) {
+        values = line.split(',');
+      } else {
+        // Try decrypting
+        // Since decryptText is now O(N), this is fast enough
+        values = decryptText(line).split(',');
       }
-      const values = decryptedLine.split(',');
-
-      const date = values[1] || '';
-      const timeOfDay = values[2] || '';
 
       const toNum = (val: string | undefined) => (val && val.trim() !== '' ? parseFloat(val) : NaN);
 
+      // Helper to get value by column name
+      const getVal = (colName: string) => {
+        const idx = colMap[colName];
+        return idx !== undefined ? values[idx] : undefined;
+      };
+
+      // Helper to get value by index relative to Time of Day (legacy fallback)
+      const getValByIndex = (offset: number) => {
+        // Fallback logic if column mapping failed
+        // In legacy format: 0=ID, 1=Date, 2=Time, 3=Temp1...
+        return values[offset];
+      };
+
       const row: MareeRow = {
-        Date: date,
-        TimeOfDay: timeOfDay,
+        Date: getVal('Date') || getValByIndex(1) || '',
+        TimeOfDay: getVal('Time of Day') || getValByIndex(2) || '',
+        Latitude: toNum(getVal('Latitude') || getVal('Lat')),
+        Longitude: toNum(getVal('Longitude') || getVal('Long') || getVal('Lng')),
+        // Map sensors based on fixed positions (3 to 14)
         Temp1: toNum(values[3]),
         Temp2: toNum(values[4]),
         Temp3: toNum(values[5]),
@@ -274,33 +403,21 @@ export class GraphiqueComponent implements OnInit {
         Temp10: toNum(values[12]),
         Temp11: toNum(values[13]),
         Temp12: toNum(values[14]),
-        A1: toNum(values[15]),
-        A2: toNum(values[16]),
-        A3: toNum(values[17]),
-        A4: toNum(values[18]),
-        A5: toNum(values[19]),
-        A6: toNum(values[20]),
-        A7: toNum(values[21]),
-        A8: toNum(values[22]),
-        A9: toNum(values[23]),
-        A10: toNum(values[24]),
-        A11: toNum(values[25]),
-        A12: toNum(values[26]),
-        Latitude: toNum(values[27]),
-        Longitude: toNum(values[28]),
+        // Map status flags/consignes
+        A1: toNum(getVal('AF') || getValByIndex(15)),
+        A2: toNum(getVal('AS') || getValByIndex(16)),
+        A3: toNum(getVal('AT') || getValByIndex(17)),
+        // Legacy fallbacks for A4-A12 if needed, or just leave undefined
       };
 
-      if (index < 3) {
-        console.log(`Parsed row ${index}:`, row);
+      // Fallback for Lat/Lon if not found by name but we have enough columns (Legacy format)
+      if (isNaN(row.Latitude) && values.length > 27) {
+        row.Latitude = toNum(values[27]);
+        row.Longitude = toNum(values[28]);
       }
 
       return row;
     });
-
-    console.log('\n=== PARSED DATA SUMMARY ===');
-    console.log('Total parsed rows:', data.length);
-    console.log('First row:', data[0]);
-    console.log('Last row:', data[data.length - 1]);
 
     return data;
   }
@@ -309,157 +426,362 @@ export class GraphiqueComponent implements OnInit {
     const validEntries = data.filter((entry) => entry.Date && entry.TimeOfDay);
     if (!validEntries.length) return;
 
-    this.startDate = `${validEntries[0].Date} ${validEntries[0].TimeOfDay}`;
-    this.endDate = `${validEntries[validEntries.length - 1].Date} ${validEntries[validEntries.length - 1].TimeOfDay}`;
+    const normalizeTimeWithSeconds = (timeStr: string): string => {
+      const parts = timeStr.split(':');
+      if (parts.length === 2) {
+        // HH:mm  -> HH:mm:00
+        return `${parts[0]}:${parts[1]}:00`;
+      }
+      if (parts.length >= 3) {
+        // HH:mm:ss or longer -> keep first 3 parts
+        return `${parts[0]}:${parts[1]}:${parts[2]}`;
+      }
+      return timeStr;
+    };
+
+    const first = validEntries[0];
+    const last = validEntries[validEntries.length - 1];
+
+    this.startDate = `${first.Date} ${normalizeTimeWithSeconds(first.TimeOfDay)}`;
+    this.endDate = `${last.Date} ${normalizeTimeWithSeconds(last.TimeOfDay)}`;
     this.duration = calculateDuration(this.startDate, this.endDate);
   }
 
   createChart(data: MareeRow[], index: number): void {
-    console.log(`\n=== Creating Chart ${index} ===`);
-    console.log('Data points:', data.length);
-    
     const canvasId = 'chart' + index;
     const canvasElement = document.getElementById(canvasId);
-    
+
+    console.log(`Attempting to create chart ${index}, canvas found:`, !!canvasElement);
+
     if (!canvasElement) {
-      console.error(`Canvas element not found: ${canvasId}`);
+      console.error(`Canvas element not found for chart ${index}`);
       return;
     }
-    
-    console.log('Canvas element found:', canvasId);
-    
+
     // Apply display step from settings
     const step = this.chartSettings.displayStep;
-    const filteredData = data.filter((_, index) => index % step === 0);
-    
-    // Create multi-line labels: first line = date, second line = time
-    const labels = filteredData.map((entry) => [entry.Date, entry.TimeOfDay]);
+    console.log(`Chart ${index}: Applying displayStep=${step} to ${data.length} data points`);
+
+    let filteredData = data.filter((_, index) => index % step === 0);
+    console.log(`  After step filtering: ${filteredData.length} points remaining`);
+
+    // Check if we have any valid temperature data in the filtered set
+    const sampleTemps = filteredData.slice(0, 10).map(d => ({
+      Temp1: d.Temp1,
+      Temp2: d.Temp2,
+      Temp3: d.Temp3
+    }));
+    console.log(`  Sample temperatures from filtered data:`, sampleTemps);
+
+    // Filter out consecutive duplicates (same Date and Time)
+    const uniqueData: MareeRow[] = [];
+    if (filteredData.length > 0) {
+      uniqueData.push(filteredData[0]);
+      for (let i = 1; i < filteredData.length; i++) {
+        const prev = uniqueData[uniqueData.length - 1];
+        const curr = filteredData[i];
+        if (curr.Date !== prev.Date || curr.TimeOfDay !== prev.TimeOfDay) {
+          uniqueData.push(curr);
+        }
+      }
+    }
+    filteredData = uniqueData;
+
+    // Pre-calculate X values (Dates)
+    const xValues = filteredData.map((entry) => formatDate(entry.Date, entry.TimeOfDay));
 
     const datasets: any[] = [];
     const lastValid: { [tempKey: string]: number } = {};
-    const lastValidConsigne: { [tempKey: string]: number } = {};
 
-    this.seriesConfig.forEach((cfg, idx) => {
-      const nom = cfg.label;
+    // Use sensors from settings
+    const sensors = this.chartSettings.sensors || [];
 
-      const tempSeries = filteredData.map((entry) => {
-        const raw = (entry as any)[cfg.key] as number;
-        if (raw !== this.invalidTempSentinel && !isNaN(raw)) {
-          lastValid[cfg.key] = raw;
-          return raw;
-        }
-        return lastValid[cfg.key] ?? raw;
+    console.log(`Chart ${index}: Processing ${sensors.length} sensors from settings`);
+    sensors.forEach(s => {
+      console.log(`  Sensor ${s.id} (${s.label}): enabled=${s.enabled}, color=${s.color}, min=${s.min}, max=${s.max}`);
+    });
+
+    sensors.forEach((sensor, idx) => {
+      // Skip disabled sensors
+      if (!sensor.enabled) {
+        console.log(`  Skipping disabled sensor: ${sensor.id} (${sensor.label})`);
+        return;
+      }
+
+      const key = `Temp${sensor.id}`;
+      // Use label from settings if available, otherwise fallback to file header or default
+      const nom = sensor.label || this.sensorNames[key] || `Temp${sensor.id}`;
+
+      // Log first few raw values to debug
+      console.log(`  Processing ${nom} (${key}):`, {
+        firstEntry: filteredData[0],
+        rawValue: (filteredData[0] as any)[key],
+        sampleRawValues: filteredData.slice(0, 3).map(e => (e as any)[key])
       });
 
-      // Only add this sensor to the chart if it has at least one valid reading
-      const hasValidData = tempSeries.some(val => val !== this.invalidTempSentinel && !isNaN(val));
-      
+      const tempSeries = filteredData.map((entry, i) => {
+        const raw = (entry as any)[key] as number;
+        const x = xValues[i];
+
+        // If we have a valid value (not -127 and not NaN), use it and update lastValid
+        if (raw !== this.invalidTempSentinel && !isNaN(raw)) {
+          lastValid[key] = raw;
+          return { x, y: raw };
+        }
+
+        // If we have a lastValid value, use it (carry forward last good value)
+        // Otherwise, return null (we haven't found a valid value yet)
+        const val = lastValid[key] !== undefined ? lastValid[key] : null;
+        return { x, y: val };
+      });
+
+      const hasValidData = tempSeries.some(val => val.y !== this.invalidTempSentinel && val.y !== null && !isNaN(val.y));
+
+      console.log(`  Sensor ${sensor.id} (${nom}): hasValidData=${hasValidData}, sample data:`, tempSeries.slice(0, 5));
+
       if (hasValidData) {
+        console.log(`    -> Adding temperature dataset for ${nom}`);
         datasets.push({
           label: nom,
-          borderColor: cfg.color,
+          borderColor: sensor.color,
           data: tempSeries,
           pointRadius: 0,
           fill: false,
           borderWidth: 2,
         });
+      } else {
+        console.log(`    -> Skipping ${nom} - no valid data found`);
       }
-    });
 
-    // Add only the 3 main consignes (A1, A2, A3)
-    const consigneConfig = [
-      { key: 'A1', label: 'Consigne 1', color: '#FF0000' },
-      { key: 'A2', label: 'Consigne 2', color: '#00FF00' },
-      { key: 'A3', label: 'Consigne 3', color: '#0000FF' },
-    ];
-
-    consigneConfig.forEach((cfg) => {
-      const consigneSeries = filteredData.map((entry) => {
-        const raw = (entry as any)[cfg.key] as number;
-        if (!isNaN(raw) && raw !== 0) {
-          lastValidConsigne[cfg.key] = raw;
-          return raw;
-        }
-        return lastValidConsigne[cfg.key] ?? null;
-      });
-
-      const hasValidConsigne = consigneSeries.some(val => val !== null && !isNaN(val as number));
-      
-      if (hasValidConsigne) {
+      // Add Min consigne from settings
+      if (sensor.min !== undefined && sensor.min !== null) {
+        const consigneSeries = filteredData.map((_, i) => ({
+          x: xValues[i],
+          y: sensor.min
+        }));
         datasets.push({
-          label: cfg.label,
-          borderColor: cfg.color,
+          label: `Min ${nom}`,
+          borderColor: sensor.color,
           data: consigneSeries,
           pointRadius: 0,
           fill: false,
-          borderWidth: 2,
+          borderWidth: 1,
+          borderDash: [5, 5],
+        });
+      }
+
+      // Add Max consigne from settings
+      if (sensor.max !== undefined && sensor.max !== null) {
+        const consigneSeries = filteredData.map((_, i) => ({
+          x: xValues[i],
+          y: sensor.max
+        }));
+        datasets.push({
+          label: `Max ${nom}`,
+          borderColor: sensor.color,
+          data: consigneSeries,
+          pointRadius: 0,
+          fill: false,
+          borderWidth: 1,
           borderDash: [5, 5],
         });
       }
     });
 
-    console.log('Datasets created:', datasets.length);
-    console.log('Active sensors:', datasets.map(d => d.label));
+    console.log(`Chart ${index}: Created ${datasets.length} datasets`);
+    datasets.forEach(ds => {
+      console.log(`  - ${ds.label}: ${ds.data.length} points, color: ${ds.borderColor}`);
+    });
+
+    // Custom plugin to draw Date labels (Tachograph style)
+    const tachographPlugin = {
+      id: 'tachographAxis',
+      afterDraw: (chart: any) => {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yPos = xAxis.bottom;
+
+        ctx.save();
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000';
+
+        // Draw separator line between time ticks and date labels
+        ctx.beginPath();
+        ctx.moveTo(xAxis.left, yPos + 20);
+        ctx.lineTo(xAxis.right, yPos + 20);
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        let lastDate = '';
+        let currentDayStart = xAxis.left;
+
+        // Iterate to find day boundaries
+        filteredData.forEach((entry, i) => {
+          if (entry.Date !== lastDate) {
+            // Use timestamp to get pixel position
+            const xPos = xAxis.getPixelForValue(xValues[i].getTime());
+
+            if (lastDate !== '') {
+              const centerX = (currentDayStart + xPos) / 2;
+              // Only draw if visible
+              if (centerX >= xAxis.left && centerX <= xAxis.right) {
+                ctx.fillText(lastDate, centerX, yPos + 35);
+              }
+
+              // Draw vertical separator for day change
+              ctx.beginPath();
+              ctx.moveTo(xPos, yPos);
+              ctx.lineTo(xPos, yPos + 20);
+              ctx.strokeStyle = '#000';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+
+            currentDayStart = xPos;
+            lastDate = entry.Date;
+          }
+        });
+
+        // Draw last day
+        if (lastDate !== '') {
+          const centerX = (currentDayStart + xAxis.right) / 2;
+          if (centerX >= xAxis.left && centerX <= xAxis.right) {
+            ctx.fillText(lastDate, centerX, yPos + 35);
+          }
+        }
+
+        ctx.restore();
+      }
+    };
+
+    // Plugin to draw minor Y-axis ticks between main ticks
+    const minorTicksPlugin = {
+      id: 'minorYAxisTicks',
+      afterDraw: (chart: any) => {
+        const yAxis = chart.scales.y;
+        if (!yAxis) return;
+
+        const ctx = chart.ctx;
+        const ticks = yAxis.ticks || [];
+        if (!ticks.length || ticks.length < 2) return;
+
+        ctx.save();
+        // Slightly darker and thicker so minor ticks are clearly visible
+        ctx.strokeStyle = '#aaaaaa';
+        ctx.lineWidth = 0.6;
+
+        // Draw 9 minor ticks between each pair of main ticks
+        for (let i = 0; i < ticks.length - 1; i++) {
+          const startVal = ticks[i].value;
+          const endVal = ticks[i + 1].value;
+
+          const startY = yAxis.getPixelForValue(startVal);
+          const endY = yAxis.getPixelForValue(endVal);
+
+          for (let j = 1; j <= 9; j++) {
+            const ratio = j / 10;
+            const y = startY + (endY - startY) * ratio;
+
+            // Minor tick mark (left side, a bit longer)
+            ctx.beginPath();
+            ctx.moveTo(yAxis.left - 6, y);
+            ctx.lineTo(yAxis.left, y);
+            ctx.stroke();
+
+            // Very light horizontal grid line across the chart area
+            ctx.save();
+            ctx.strokeStyle = '#e5e5e5';
+            ctx.lineWidth = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(yAxis.left, y);
+            ctx.lineTo(yAxis.right, y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+
+        ctx.restore();
+      }
+    };
+
+    // Calculate dynamic min/max to include consignes
+    let yMin = this.chartSettings.tempMin;
+    let yMax = this.chartSettings.tempMax;
+
+    // Check active consignes (Min/Max) to expand range if needed
+    datasets.forEach(ds => {
+      if (ds.label && (ds.label.startsWith('Min ') || ds.label.startsWith('Max '))) {
+        const val = ds.data[0]?.y; // Consigne is constant
+        if (val !== undefined && val !== null) {
+          if (val < yMin) yMin = val - 5; // Add padding
+          if (val > yMax) yMax = val + 5;
+        }
+      }
+    });
 
     const chart = new Chart(canvasId, {
       type: 'line',
       data: {
-        labels,
         datasets,
       },
+      plugins: [tachographPlugin, minorTicksPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
           padding: {
             top: 10,
-            bottom: 10,
+            bottom: 40,
           },
         },
         scales: {
           x: {
-            display: true,
-            ticks: {
-              font: {
-                size: 10,
-              },
-              maxRotation: 0,
-              minRotation: 0,
-              autoSkip: false,
-              maxTicksLimit: 30,
-              callback: function(value, index, ticks) {
-                // Show first tick and regular spaced ticks, but hide the very last one
-                const step = Math.ceil(ticks.length / 20) || 1;
-
-                if (index === 0) {
-                  return this.getLabelForValue(value as number);
-                }
-
-                // Do not display the very last label to avoid it being cut at the right edge
-                if (index === ticks.length - 1) {
-                  return '';
-                }
-
-                if (index % step === 0) {
-                  return this.getLabelForValue(value as number);
-                }
-
-                return '';
+            type: 'time',
+            time: {
+              unit: 'hour',
+              displayFormats: {
+                hour: 'HH:mm'
               }
             },
-            title: {
+            // Set min/max to enforce exact time range based on pointsPerPage (in minutes)
+            min: xValues.length > 0 ? xValues[0].getTime() : undefined,
+            max: xValues.length > 0 ? xValues[0].getTime() + (this.chartSettings.pointsPerPage * 60 * 1000) : undefined,
+            grid: {
+              // Vertical grid lines for "millimetre paper" effect
               display: true,
-              text: 'Temps d\u2019enregistrement',
-              font: {
-                size: 14,
-              },
+              drawOnChartArea: true,
+              drawTicks: true,
+              color: '#e0e0e0',
+              lineWidth: 0.4,
+            },
+            border: {
+              display: true,
+              color: '#000',
+              width: 1,
+            },
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 24,
+              source: 'auto'
+            },
+            title: {
+              display: false,
             },
           },
           y: {
             display: true,
-            min: this.chartSettings.tempMin,
-            max: this.chartSettings.tempMax,
+            min: yMin,
+            max: yMax,
+            grid: {
+              // Main horizontal grid lines slightly darker
+              color: '#d0d0d0',
+              lineWidth: 0.7,
+            },
             ticks: {
+              // Main labeled ticks every 10°C
+              stepSize: 10,
               font: {
                 size: 11,
               },
@@ -479,7 +801,7 @@ export class GraphiqueComponent implements OnInit {
             position: 'top',
             labels: {
               font: {
-                size: 10,
+                size: 14,
               },
               boxWidth: 15,
               padding: 8,
@@ -488,6 +810,27 @@ export class GraphiqueComponent implements OnInit {
           },
           title: {
             display: false,
+          },
+          tooltip: {
+            callbacks: {
+              title: (tooltipItems: any) => {
+                if (!tooltipItems || !tooltipItems.length) {
+                  return '';
+                }
+
+                const first = tooltipItems[0];
+                const value = first.parsed && first.parsed.x !== undefined ? first.parsed.x : first.label;
+
+                const date = value instanceof Date ? value : new Date(value);
+                if (isNaN(date.getTime())) {
+                  return '';
+                }
+
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+              }
+            }
           },
         },
       },
@@ -499,7 +842,7 @@ export class GraphiqueComponent implements OnInit {
   handlePrint(): void {
     // Save original title
     const originalTitle = document.title;
-    
+
     // Change title for print
     document.title = 'CST F3S 2024';
 
@@ -511,7 +854,7 @@ export class GraphiqueComponent implements OnInit {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
-    
+
     this.printDate = `Édité ${day}/${month}/${year}`;
     this.printTime = `${hours}:${minutes}:${seconds}`;
 
@@ -525,16 +868,16 @@ export class GraphiqueComponent implements OnInit {
           // Store original size
           const originalWidth = canvas.width;
           const originalHeight = canvas.height;
-          
+
           // Increase resolution (2x for better quality)
           canvas.width = originalWidth * 2;
           canvas.height = originalHeight * 2;
           canvas.style.width = originalWidth + 'px';
           canvas.style.height = originalHeight + 'px';
-          
+
           // Scale context to match
           ctx.scale(2, 2);
-          
+
           // Redraw chart
           chart.resize();
         }
@@ -544,7 +887,7 @@ export class GraphiqueComponent implements OnInit {
     // Print after a short delay to ensure rendering is complete
     setTimeout(() => {
       window.print();
-      
+
       // Restore original title and reset resolution after print
       setTimeout(() => {
         document.title = originalTitle;
@@ -554,6 +897,7 @@ export class GraphiqueComponent implements OnInit {
       }, 100);
     }, 300);
   }
+
 
 
 

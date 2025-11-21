@@ -1,130 +1,234 @@
-<div class="container">
-  <div class="card">
-    <div class="header">
-      <button (click)="goBack()" class="btn-back">← Retour</button>
-      <h1>Paramètres</h1>
-      <div></div>
+<div class="flex justify-center items-center h-screen bg-gray-50 p-4 w-full overflow-hidden font-sans">
+  <div
+    class="w-full max-w-[98%] bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col h-full border border-gray-100">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-8 py-5 bg-white border-b border-gray-100 shrink-0">
+      <div class="flex items-center gap-4">
+        <img src="assets/cst.png" alt="Logo" class="h-12 w-auto object-contain">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 m-0 tracking-tight">Paramètres</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Configuration de l'application et des graphiques</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="saveSettings()"
+          class="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 font-bold text-sm border-none cursor-pointer shadow-md shadow-green-100 transform hover:-translate-y-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Enregistrer
+        </button>
+        <button (click)="goBack()"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all duration-200 font-semibold text-sm border border-gray-200 cursor-pointer shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Retour
+        </button>
+      </div>
     </div>
 
-    <div class="settings-section">
-      <div class="setting-item full-width">
-        <label class="setting-label">
-          <strong>Dossier de téléchargement</strong>
-        </label>
-        <div class="folder-selector">
-          <input 
-            type="text" 
-            [(ngModel)]="settings.downloadPath" 
-            readonly 
-            class="folder-input"
-            placeholder="Sélectionner un dossier"
-          />
-          <button (click)="selectFolder()" class="btn-browse">
-            Parcourir
-          </button>
-        </div>
-        <p class="setting-description">
-          Choisissez où les fichiers seront téléchargés automatiquement
-        </p>
-      </div>
+    <!-- Content -->
+    <div class="p-8 overflow-y-auto flex-1 bg-white">
+      <div class="grid grid-cols-7 gap-10 h-full">
 
-      <div class="setting-item full-width">
-        <label class="setting-label">
-          <input 
-            type="checkbox" 
-            [(ngModel)]="settings.autoDownload"
-            class="checkbox"
-          />
-          <strong>Téléchargement automatique</strong>
-        </label>
-        <p class="setting-description">
-          Télécharger automatiquement tous les fichiers lors de l'affichage de la liste
-        </p>
-      </div>
+        <!-- Left Panel (General, Pagination, Temperature) - Spans 4 columns -->
+        <div class="flex flex-col gap-8 col-span-4">
 
-      <div class="divider"></div>
+          <!-- Row 1: General Settings (Full Width) -->
+          <div class="bg-white rounded-xl">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">Général</h2>
+            <p class="text-xs text-gray-500 mb-4">Paramètres globaux de l'application</p>
 
-      <h2>Paramètres des Graphiques</h2>
-
-      <!-- Pagination Section -->
-      <div class="setting-group full-width">
-        <h3 class="group-title">📊 Pagination des données</h3>
-        <div class="group-content">
-          <div class="setting-item-inline">
-            <label class="setting-label">Nombre de points par page</label>
-            <div class="input-group">
-              <input 
-                type="number" 
-                [(ngModel)]="chartSettings.pointsPerPage" 
-                class="number-input"
-                min="100"
-                step="100"
-              />
-              <span class="input-hint">défaut: 1440</span>
+            <div class="flex flex-col gap-3">
+              <label class="text-sm font-semibold text-gray-700">Dossier de téléchargement</label>
+              <div class="flex gap-3">
+                <input type="text" [(ngModel)]="settings.downloadPath" readonly
+                  class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
+                  placeholder="Sélectionner un dossier" />
+                <button (click)="selectFolder()"
+                  class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium text-sm border-none cursor-pointer shadow-md shadow-blue-100 whitespace-nowrap flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Parcourir
+                </button>
+              </div>
             </div>
-            <p class="setting-description">Divise les données en plusieurs graphiques</p>
           </div>
 
-          <div class="setting-item-inline">
-            <label class="setting-label">Pas d'affichage</label>
-            <div class="input-group">
-              <input 
-                type="number" 
-                [(ngModel)]="chartSettings.displayStep" 
-                class="number-input"
-                min="1"
-                step="1"
-              />
-              <span class="input-hint">défaut: 1</span>
-            </div>
-            <p class="setting-description">Affiche 1 point sur X (1 = tous les points)</p>
-          </div>
-        </div>
-      </div>
+          <!-- Row 2: Pagination & Temperature (Side by Side) -->
+          <div class="grid grid-cols-2 gap-8">
+            <!-- Pagination Settings -->
+            <div>
+              <h2 class="text-lg font-bold text-gray-800 mb-1">Pagination</h2>
+              <p class="text-xs text-gray-500 mb-4">Contrôle de l'affichage</p>
 
-      <!-- Temperature Range Section -->
-      <div class="setting-group full-width">
-        <h3 class="group-title">🌡️ Plage de température</h3>
-        <div class="group-content">
-          <div class="setting-item-inline">
-            <label class="setting-label">Température minimum</label>
-            <div class="input-group">
-              <input 
-                type="number" 
-                [(ngModel)]="chartSettings.tempMin" 
-                class="number-input"
-                step="1"
-              />
-              <span class="input-unit">°C</span>
-              <span class="input-hint">défaut: -30°C</span>
-            </div>
-            <p class="setting-description">Limite inférieure de l'axe Y</p>
-          </div>
+              <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6 shadow-sm h-full">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Points par page</label>
+                  <div class="flex items-center gap-3">
+                    <input type="number" [(ngModel)]="chartSettings.pointsPerPage"
+                      class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
+                      min="100" step="100" />
+                  </div>
+                  <span class="text-xs text-gray-400 mt-1 block">défaut: 1440</span>
+                </div>
 
-          <div class="setting-item-inline">
-            <label class="setting-label">Température maximum</label>
-            <div class="input-group">
-              <input 
-                type="number" 
-                [(ngModel)]="chartSettings.tempMax" 
-                class="number-input"
-                step="1"
-              />
-              <span class="input-unit">°C</span>
-              <span class="input-hint">défaut: 50°C</span>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Pas d'affichage</label>
+                  <div class="flex items-center gap-3">
+                    <select [(ngModel)]="chartSettings.displayStep"
+                      class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm cursor-pointer">
+                      <option [value]="1">1 min</option>
+                      <option [value]="2">2 min</option>
+                      <option [value]="5">5 min</option>
+                      <option [value]="15">15 min</option>
+                      <option [value]="30">30 min</option>
+                      <option [value]="60">1 heure</option>
+                    </select>
+                  </div>
+                  <span class="text-xs text-gray-400 mt-1 block">défaut: 1</span>
+                </div>
+              </div>
             </div>
-            <p class="setting-description">Limite supérieure de l'axe Y</p>
+
+            <!-- Temperature Settings -->
+            <div>
+              <h2 class="text-lg font-bold text-gray-800 mb-1">Limites de l'axe vertical </h2>
+              <p class="text-xs text-gray-500 mb-4"> Température</p>
+
+              <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6 shadow-sm h-full">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum</label>
+                  <div class="flex items-center gap-3">
+                    <div class="relative w-full">
+                      <input type="number" [(ngModel)]="chartSettings.tempMin"
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 shadow-sm"
+                        step="1" />
+                      <span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">°C</span>
+                    </div>
+                  </div>
+                  <span class="text-xs text-gray-400 mt-1 block">défaut: -55</span>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Maximum</label>
+                  <div class="flex items-center gap-3">
+                    <div class="relative w-full">
+                      <input type="number" [(ngModel)]="chartSettings.tempMax"
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 shadow-sm"
+                        step="1" />
+                      <span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">°C</span>
+                    </div>
+                  </div>
+                  <span class="text-xs text-gray-400 mt-1 block">défaut: 125</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="actions">
-        <button (click)="resetChartSettings()" class="btn-reset">
-          Réinitialiser les paramètres graphiques
-        </button>
-        <button (click)="saveSettings()" class="btn-save">
-          Enregistrer les paramètres
-        </button>
+        <!-- Column 3: Sensor Configuration -->
+        <div class="flex flex-col h-full col-span-3">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800 m-0">Capteurs</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Configuration des 12 sondes</p>
+            </div>
+            <button (click)="addSensor()"
+              class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all duration-200 font-bold text-xs border border-blue-100 cursor-pointer flex items-center gap-2 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Ajouter
+            </button>
+          </div>
+
+          <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex-1 overflow-y-auto shadow-inner">
+            <div class="flex flex-col gap-3">
+              <!-- Header Row -->
+              <div class="grid grid-cols-12 gap-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                <div class="col-span-2">Capteur</div>
+                <div class="col-span-4">Libellé</div>
+                <div class="col-span-2">Min</div>
+                <div class="col-span-2">Max</div>
+                <div class="col-span-2">Mode</div>
+              </div>
+
+              <!-- Sensor Rows -->
+              <div *ngFor="let sensor of activeSensors"
+                class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow duration-200 group">
+                <!-- ID & Color -->
+                <div class="flex items-center gap-3 w-16 shrink-0">
+                  <div class="w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0 shadow-sm"
+                    [style.background-color]="sensor.color"></div>
+                  <span class="font-bold text-sm text-gray-700">T{{ sensor.id }}</span>
+                </div>
+
+                <!-- Inputs -->
+                <div class="grid grid-cols-10 gap-3 flex-1">
+                  <div class="col-span-4">
+                    <input type="text" [(ngModel)]="sensor.label"
+                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white"
+                      placeholder="Libellé">
+                  </div>
+                  <div class="col-span-2">
+                    <input type="number" [(ngModel)]="sensor.min"
+                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      placeholder="Min">
+                  </div>
+                  <div class="col-span-2">
+                    <input type="number" [(ngModel)]="sensor.max"
+                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      placeholder="Max">
+                  </div>
+                  <div class="col-span-2">
+                    <input type="number" [(ngModel)]="sensor.mode"
+                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      placeholder="Mode">
+                  </div>
+                </div>
+
+                <!-- Delete -->
+                <button (click)="removeSensor(sensor.id)"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-white hover:bg-red-500 transition-all duration-200 cursor-pointer border-none bg-transparent shrink-0"
+                  title="Supprimer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="activeSensors.length === 0"
+              class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                class="opacity-50">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+              <p class="text-sm font-medium">Aucun capteur configuré</p>
+              <button (click)="addSensor()"
+                class="text-blue-600 hover:underline text-sm cursor-pointer bg-transparent border-none">Ajouter un
+                capteur</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

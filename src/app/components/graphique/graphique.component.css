@@ -124,14 +124,9 @@
     page-break-after: auto;
   }
 
-  /* Remove decorative styles for print */
-  .bg-white,
-  .border,
-  .rounded-lg,
+  /* Remove only heavy box-shadows for print while keeping colors */
   .shadow {
     box-shadow: none !important;
-    border-radius: 0 !important;
-    background: white !important;
   }
 
   /* Chart page padding already defined above */
@@ -149,7 +144,7 @@
     page-break-inside: avoid !important;
   }
 
-  /* Table styling for print */
+  /* Table styling for print (match on-screen sizing/colors) */
   table {
     width: 100% !important;
     max-width: 100% !important;
@@ -157,14 +152,14 @@
     page-break-inside: avoid !important;
     page-break-after: avoid !important;
     page-break-before: avoid !important;
-    font-size: 9px !important;
+    font-size: 11px !important;
   }
 
   table th,
   table td {
-    padding: 4px 8px !important;
-    font-size: 9px !important;
-    color: #000 !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    color: inherit !important;
     border-color: #000 !important;
   }
 
@@ -199,14 +194,14 @@
   canvas {
     width: 100% !important;
     max-width: 100% !important;
-    height: 500px !important;
-    max-height: 500px !important;
+    height: 400px !important;
+    max-height: 400px !important;
     page-break-inside: avoid !important;
     page-break-before: avoid !important;
     page-break-after: avoid !important;
     display: block !important;
-    margin: 20px auto !important;
-    padding: 15px !important;
+    margin: 10px auto !important;
+    padding: 10px !important;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     image-rendering: pixelated;

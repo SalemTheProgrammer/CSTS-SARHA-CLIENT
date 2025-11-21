@@ -1,20 +1,49 @@
-<div class="container">
-  <div class="card">
-    <h1>Bienvenue sur Sarha</h1>
-    <p class="subtitle">Importez votre fichier de configuration chiffré</p>
-    
-    <label for="file-input" class="file-label">
-      <span>Choisir un fichier</span>
-      <input 
-        id="file-input"
-        type="file" 
-        accept=".txt,.enc"
-        (change)="onFileSelected($event)"
-        [disabled]="isLoading"
-      />
-    </label>
+<div class="min-h-[70vh] w-full bg-gray-50 flex items-center justify-center p-6">
+  <div class="w-full max-w-3xl rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+    <div class="p-6 sm:p-8">
+      <h1 class="text-2xl font-semibold text-gray-900">Upload Files</h1>
+      <p class="mt-1 text-sm text-gray-500">Importez votre fichier de configuration chiffré</p>
 
-    <p *ngIf="isLoading" class="loading">Chargement...</p>
-    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+      <!-- Dropzone -->
+      <label
+        for="file-input"
+        class="mt-6 block cursor-pointer rounded-xl border border-dashed"
+        [ngClass]="isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 bg-gray-50'"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
+        <div class="flex flex-col items-center justify-center px-8 py-12 text-center">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 text-gray-500">
+            <span class="text-2xl">+</span>
+          </div>
+          <p class="mt-4 text-sm text-gray-600">
+            <span class="font-medium text-gray-900">Glisser-déposer</span> ou cliquez pour choisir un fichier
+          </p>
+          <p class="mt-2 text-xs text-gray-400 flex items-center gap-1">
+            <span class="i">i</span>
+            Taille max: 10 Mo • Types: .txt, .enc
+          </p>
+        </div>
+        <input
+          id="file-input"
+          type="file"
+          accept=".txt,.enc,application/json,text/plain"
+          class="hidden"
+          (change)="onFileSelected($event)"
+          [disabled]="isLoading"
+        />
+      </label>
+
+      <!-- Status / Error -->
+      <div class="mt-4 space-y-2">
+        <div *ngIf="isLoading" class="rounded-lg bg-blue-50 text-blue-700 px-4 py-2 text-sm">
+          Chargement...
+        </div>
+        <div *ngIf="errorMessage" class="rounded-lg bg-red-50 text-red-700 px-4 py-2 text-sm">
+          {{ errorMessage }}
+        </div>
+      </div>
+    </div>
   </div>
 </div>

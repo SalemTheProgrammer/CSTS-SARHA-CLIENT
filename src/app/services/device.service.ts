@@ -1,19 +1,70 @@
 import { Injectable } from '@angular/core';
 import { fetch } from '@tauri-apps/plugin-http';
+import { environment } from '../../environments/environment';
+
+export interface ApInfo {
+  ssid: string;
+  password: string;
+  instructions: string[];
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DeviceService {
-  private readonly DEVICE_URL = 'http://192.168.1.140';
-  private readonly TIMEOUT_MS = 5000;
+  private readonly DEFAULT_DEVICE_URL = environment.defaultDeviceUrl;
+  private readonly TIMEOUT_MS = environment.connectionTimeout;
+  private readonly STORAGE_KEY = 'custom_device_url';
 
-  async checkDeviceConnection(): Promise<boolean> {
+  /**
+   * Get the current API URL (custom or default)
+   */
+  getApiUrl(): string {
+    const customUrl = localStorage.getItem(this.STORAGE_KEY);
+    return customUrl || this.DEFAULT_DEVICE_URL;
+  }
+
+  /**
+   * Set a custom API URL
+   */
+  setApiUrl(url: string): void {
+    if (this.validateApiUrl(url)) {
+      localStorage.setItem(this.STORAGE_KEY, url);
+    } else {
+      throw new Error('Invalid API URL format');
+    }
+  }
+
+  /**
+   * Reset to default API URL
+   */
+  resetApiUrl(): void {
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+
+  /**
+   * Validate API URL format
+   */
+  validateApiUrl(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check device connection with optional custom URL
+   */
+  async checkDeviceConnection(customUrl?: string): Promise<boolean> {
+    const targetUrl = customUrl || this.getApiUrl();
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT_MS);
 
-      const response = await fetch(this.DEVICE_URL, {
+      const response = await fetch(targetUrl, {
         method: 'GET',
         signal: controller.signal
       });
@@ -24,5 +75,24 @@ export class DeviceService {
       console.error('Device connection check failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Get device Access Point information
+   */
+  getDeviceApInfo(): ApInfo {
+    return {
+      ssid: environment.deviceApSsid,
+      password: environment.deviceApPassword,
+      instructions: [
+        'Open your WiFi settings',
+        `Look for network: ${environment.deviceApSsid}`,
+        environment.deviceApPassword
+          ? `Enter password: ${environment.deviceApPassword}`
+          : 'No password required',
+        'Connect to the network',
+        'Return to this app to configure the device'
+      ]
+    };
   }
 }

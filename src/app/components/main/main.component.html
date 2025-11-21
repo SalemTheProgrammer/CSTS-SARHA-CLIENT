@@ -1,75 +1,175 @@
-<div class="container">
-  <div class="card">
-    <div class="header">
-      <h1>Fichiers de l'appareil</h1>
-      <div class="header-actions">
-        <button (click)="openSettings()" class="btn-settings" title="Paramètres">
-          Paramètres
-        </button>
-        <button (click)="refresh()" class="btn-refresh" [disabled]="isLoading || isDownloading">
-          {{ isLoading ? 'Chargement...' : 'Actualiser' }}
-        </button>
-      </div>
-    </div>
+<div class="flex justify-center items-start min-h-screen bg-gray-50 p-5 w-full">
+    <div class="w-full bg-white shadow-sm rounded-2xl overflow-hidden mt-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <img src="assets/cst.png" alt="Logo" class="w-10 h-10 object-contain">
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900 m-0 leading-tight">Fichiers de l'appareil</h1>
+                    <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">Gérez et visualisez les données</p>
+                </div>
+            </div>
 
-    <div *ngIf="config" class="config-info">
-      <p><strong>Appareil :</strong> {{ config.deviceName }}</p>
-      <p><strong>Adresse IP :</strong> {{ config.deviceIp }}</p>
-      <p class="success-message">✓ Connexion établie</p>
-    </div>
+            <div class="flex gap-2">
+                <button (click)="openSettings()"
+                    class="w-10 h-10 rounded-full border-none bg-gray-100 text-gray-600 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Paramètres">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        <path
+                            d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+                    </svg>
+                </button>
+                <button (click)="refresh()"
+                    class="w-10 h-10 rounded-full border-none bg-gray-100 text-gray-600 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    [disabled]="isLoading || isDownloading" title="Actualiser">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"
+                        [class.animate-spin]="isLoading">
+                        <path
+                            d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-    <div *ngIf="isLoading" class="loading">
-      <div class="spinner"></div>
-      <p>Chargement des fichiers...</p>
-    </div>
+        <!-- Content -->
+        <div class="p-6">
+            <div *ngIf="isLoading" class="text-center p-10 bg-gray-50 rounded-xl mb-5">
+                <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
+                </div>
+                <p class="text-gray-600">Chargement des fichiers...</p>
+            </div>
 
-    <div *ngIf="isDownloading" class="downloading">
-      <div class="spinner"></div>
-      <p>Téléchargement des fichiers en cours...</p>
-      <div class="progress-bar">
-        <div class="progress-fill" [style.width.%]="(downloadProgress / downloadTotal) * 100"></div>
-      </div>
-      <p class="progress-text">{{ downloadProgress }} / {{ downloadTotal }} fichiers</p>
-    </div>
+            <div *ngIf="isDownloading" class="text-center p-10 bg-gray-50 rounded-xl mb-5">
+                <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
+                </div>
+                <p class="text-gray-600">Téléchargement des fichiers en cours...</p>
+                <div class="max-w-xs mx-auto mt-4">
+                    <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-blue-600 transition-all duration-300"
+                            [style.width.%]="(downloadProgress / downloadTotal) * 100"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 m-0">{{ downloadProgress }} / {{ downloadTotal }} fichiers</p>
+                </div>
+            </div>
 
-    <div *ngIf="errorMessage" class="error">
-      {{ errorMessage }}
-    </div>
+            <div *ngIf="errorMessage" class="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-3 mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-6 h-6 flex-shrink-0">
+                    <path
+                        d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+                </svg>
+                <p>{{ errorMessage }}</p>
+            </div>
 
-    <div *ngIf="!isLoading && !errorMessage && files.length === 0" class="no-files">
-      Aucun fichier disponible
-    </div>
+            <div *ngIf="!isLoading && !errorMessage && files.length === 0" class="text-center py-16 px-5 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-16 h-16 mb-4 text-gray-300 mx-auto">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                </svg>
+                <p>Aucun fichier disponible</p>
+            </div>
 
-    <div *ngIf="!isLoading && files.length > 0" class="file-list">
-      <h2>Fichiers disponibles ({{ files.length }})</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Taille</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let file of files">
-            <td class="file-name">{{ extractDateFromFilename(file.name) }}</td>
-            <td class="file-size">{{ file.size }}</td>
-            <td class="actions">
-              <button (click)="downloadFile(file)" class="btn-download">
-                Télécharger
-              </button>
-              <!-- Add the Voir button next to Télécharger -->
-              <button (click)="viewGraph(file)" class="btn-view" [disabled]="isLoadingGraph">
-                {{ isLoadingGraph ? 'Chargement...' : 'Voir' }}
-              </button>
-              <!-- Add the Imprimer button next to Voir -->
-              <button (click)="printGraph(file)" class="btn-print" [disabled]="isLoadingGraph">
-                🖨️ Imprimer
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <div *ngIf="!isLoading && files.length > 0" class="flex flex-col gap-3">
+              
+
+                <div class="flex flex-col gap-3">
+                    <div *ngFor="let file of paginatedFiles"
+                        class="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-xl transition-all duration-200 hover:border-blue-100 hover:shadow-sm hover:-translate-y-px">
+                        <div class="flex items-center gap-6">
+                            <div
+                                class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="w-7 h-7">
+                                    <path
+                                        d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,9V3.5L18.5,9H13Z" />
+                                </svg>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-lg font-medium text-gray-800">{{ extractDateFromFilename(file.name)
+                                    }}</span>
+                                <span class="text-sm text-gray-500">{{ file.size }} • {{ file.name }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button (click)="downloadGraphPdf(file)" [disabled]="processingFile !== null"
+                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                                <ng-container
+                                    *ngIf="processingFile === file.name && processingAction === 'download'; else downloadIcon">
+                                    <div
+                                        class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </ng-container>
+                                <ng-template #downloadIcon>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-5 h-5">
+                                        <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                                    </svg>
+                                </ng-template>
+                                Télécharger
+                            </button>
+
+                            <button (click)="viewGraph(file)" [disabled]="processingFile !== null"
+                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                                <ng-container
+                                    *ngIf="processingFile === file.name && processingAction === 'view'; else viewIcon">
+                                    <div
+                                        class="w-5 h-5 border-2 border-green-700 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </ng-container>
+                                <ng-template #viewIcon>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-5 h-5">
+                                        <path
+                                            d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                                    </svg>
+                                </ng-template>
+                                Voir
+                            </button>
+
+                            <button (click)="printGraph(file)" [disabled]="processingFile !== null"
+                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                                <ng-container
+                                    *ngIf="processingFile === file.name && processingAction === 'print'; else printIcon">
+                                    <div
+                                        class="w-5 h-5 border-2 border-purple-700 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </ng-container>
+                                <ng-template #printIcon>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-5 h-5">
+                                        <path
+                                            d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" />
+                                    </svg>
+                                </ng-template>
+                                Imprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100"
+                    *ngIf="totalPages > 1">
+                    <button
+                        class="w-10 h-10 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                        [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                            <path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+                        </svg>
+                    </button>
+
+                    <span class="text-sm text-gray-600 font-medium">Page {{ currentPage }} sur {{ totalPages }}</span>
+
+                    <button
+                        class="w-10 h-10 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                        [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                            <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>

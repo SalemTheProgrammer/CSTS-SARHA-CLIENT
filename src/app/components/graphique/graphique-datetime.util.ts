@@ -1,4 +1,3 @@
-
 export function strToDate(dtStr: string | null): Date | null {
   if (!dtStr) return null;
 
@@ -10,9 +9,22 @@ export function strToDate(dtStr: string | null): Date | null {
 }
 
 export function formatDate(date: string, time: string): Date {
-  const [day, month, year] = date.split('/');
+  // Guard against empty or malformed inputs
+  if (!date || !time) {
+    return new Date(NaN);
+  }
+
+  const [day, month, yearRaw] = date.split('/');
   const [hour, minute] = time.split(':');
-  return new Date(`${year}-${month}-${day}T${hour}:${minute}`);
+
+  let year = yearRaw;
+  if (year && year.length === 2) {
+    year = '20' + year;
+  }
+
+  const pad = (s?: string) => (s || '0').padStart(2, '0');
+
+  return new Date(`${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00`);
 }
 
 export function calculateDuration(startDate: string, endDate: string): string {

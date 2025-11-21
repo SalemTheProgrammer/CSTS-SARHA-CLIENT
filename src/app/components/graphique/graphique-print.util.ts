@@ -9,10 +9,10 @@ export function buildPrintHtml(spliteddata: MareeRow[]): string {
     const table = document.getElementById('dataTable' + index);
 
     chartsHtml += '<div class="content">';
-    chartsHtml += '<h2 style="text-align:center;font-">Réleveé de températures</h2>';
+    chartsHtml += '<h2 style="text-align:center;font-size:14px;margin:4px 0 8px 0;">Relevé de température</h2>';
     chartsHtml += table ? table.outerHTML : '';
     if (chartCanvas) {
-      chartsHtml += `<img src="${chartCanvas.toDataURL()}" alt="Graphique" style="width:100%;display:block;margin-bottom:0px;margin-top:0px">`;
+      chartsHtml += `<img src="${chartCanvas.toDataURL()}" alt="Graphique" style="width:100%;height:auto;display:block;margin:6px 0 0 0;page-break-inside:avoid;">`;
     }
     chartsHtml += `<div class="pageFooter" style="font-size: 12px;font-weight: bolder;">
         <div class="copyrightpageFooter">Edité le ${moment().format('DD/MM/yyyy à HH:mm:ss')}</div>
@@ -27,45 +27,17 @@ export function buildPrintHtml(spliteddata: MareeRow[]): string {
         <title></title>
         <base href="/">
         <style type="text/css">
-          @page {
-            size: landscape;
-            margin-top: 2mm;
-            margin-left: 2mm;
-            margin-right: 5mm;
-            margin-bottom: 0mm;
-          }
-          table {
-            border-collapse: collapse;
-          }
-          th, td {
-            border: 1px solid black;
-            padding: 2px;
-            text-align: left;
-          }
-          body{
-            counter-reset: page;
-          }
-          .content {
-            display: table;
-            height: 100%;
-          }
-          .pageFooter {
-            display: table-footer-group;
-            position: relative;
-            width: 100% !important;
-            bottom: 15px;
-            height: 20px !important;
-          }
-          .innerpageFooter{
-            position: absolute;
-            right: 10px;
-            bottom: 0px;
-          }
-          .copyrightpageFooter{
-            position: absolute;
-            left: 10px;
-            bottom: 0px;
-          }
+          @page { size: A4 landscape; margin: 6mm 8mm 8mm 8mm; }
+          html, body { height: 100%; }
+          body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid black; padding: 2px; text-align: left; }
+          .content { page-break-after: always; padding-bottom: 8mm; }
+          .content:last-child { page-break-after: auto; }
+          img { max-width: 100%; height: auto; }
+          .pageFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 6mm; }
+          .innerpageFooter { text-align: right; }
+          .copyrightpageFooter { text-align: left; }
         </style>
       </head>
       <body onload="window.print();window.close()" style="padding:0;margin:0;">

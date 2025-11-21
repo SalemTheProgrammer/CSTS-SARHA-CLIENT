@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { fetch } from '@tauri-apps/plugin-http';
+import { environment } from '../../environments/environment';
 
 export interface DeviceFile {
   name: string;
@@ -12,16 +13,15 @@ export interface DeviceFile {
   providedIn: 'root'
 })
 export class FileService {
-  private readonly DEVICE_URL = 'http://192.168.1.140';
+  private readonly DEVICE_URL = environment.deviceUrl;
   private cachedFiles: DeviceFile[] | null = null;
   private lastFetchTime: number = 0;
-  private readonly CACHE_DURATION = 60000; // 1 minute
 
   async fetchFileList(forceRefresh: boolean = false): Promise<DeviceFile[]> {
     const now = Date.now();
-    
-    // Return cached files if available and not expired
-    if (!forceRefresh && this.cachedFiles && (now - this.lastFetchTime) < this.CACHE_DURATION) {
+
+    // Return cached files if available (indefinite cache until forceRefresh)
+    if (!forceRefresh && this.cachedFiles) {
       return this.cachedFiles;
     }
     try {

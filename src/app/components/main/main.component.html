@@ -70,12 +70,10 @@
             </div>
 
             <div *ngIf="!isLoading && files.length > 0" class="flex flex-col gap-3">
-              
-
                 <div class="flex flex-col gap-3">
                     <div *ngFor="let file of paginatedFiles"
                         class="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-xl transition-all duration-200 hover:border-blue-100 hover:shadow-sm hover:-translate-y-px">
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-6 flex-1">
                             <div
                                 class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
@@ -84,31 +82,24 @@
                                         d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,9V3.5L18.5,9H13Z" />
                                 </svg>
                             </div>
-                            <div class="flex flex-col gap-1">
-                                <span class="text-lg font-medium text-gray-800">{{ extractDateFromFilename(file.name)
-                                    }}</span>
-                                <span class="text-sm text-gray-500">{{ file.size }} • {{ file.name }}</span>
+                            <div class="flex items-center gap-8 flex-1">
+                                <div class="flex flex-col gap-0.5 min-w-[140px]">
+                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Date</span>
+                                    <span class="text-sm font-medium text-gray-800">{{
+                                        extractDateFromFilename(file.name) }}</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Nom du fichier</span>
+                                    <span class="text-sm font-medium text-gray-800 truncate">{{ file.name }}</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5 min-w-[100px]">
+                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Taille</span>
+                                    <span class="text-sm font-medium text-gray-800">{{ file.size }}</span>
+                                </div>
                             </div>
                         </div>
 
                         <div class="flex gap-3">
-                            <button (click)="downloadGraphPdf(file)" [disabled]="processingFile !== null"
-                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
-                                <ng-container
-                                    *ngIf="processingFile === file.name && processingAction === 'download'; else downloadIcon">
-                                    <div
-                                        class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin">
-                                    </div>
-                                </ng-container>
-                                <ng-template #downloadIcon>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                        class="w-5 h-5">
-                                        <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
-                                    </svg>
-                                </ng-template>
-                                Télécharger
-                            </button>
-
                             <button (click)="viewGraph(file)" [disabled]="processingFile !== null"
                                 class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
                                 <ng-container

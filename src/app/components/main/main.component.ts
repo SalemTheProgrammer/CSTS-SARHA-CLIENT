@@ -90,9 +90,10 @@ export class MainComponent implements OnInit {
     }
 
     updatePagination(): void {
-        this.totalPages = Math.ceil(this.files.length / this.itemsPerPage);
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        this.paginatedFiles = this.files.slice(startIndex, startIndex + this.itemsPerPage);
+        // Show only the latest file (files are already sorted by lastModified)
+        this.paginatedFiles = this.files.length > 0 ? [this.files[0]] : [];
+        this.totalPages = 1; // Only one page with the latest file
+        this.currentPage = 1;
     }
 
     async changePage(page: number): Promise<void> {
@@ -151,7 +152,6 @@ export class MainComponent implements OnInit {
 
         this.isDownloading = true;
         this.downloadProgress = 0;
-        this.downloadTotal = this.files.length;
 
         // Filter out local files (like the sample file)
         const allDeviceFiles = this.files.filter(f => f.downloadUrl !== 'local');
@@ -161,50 +161,24 @@ export class MainComponent implements OnInit {
             return;
         }
 
-        // Only download the latest 5 files initially
-        const filesToDownload = allDeviceFiles.slice(0, 5);
+        // Download only the latest file (files are already sorted by lastModified in descending order)
+        const latestFile = allDeviceFiles[0];
+        this.downloadTotal = 1;
 
-        this.downloadTotal = filesToDownload.length;
-        this.downloadProgress = 0;
+        try {
+            const blob = await this.fileService.downloadFile(latestFile);
+            const text = await blob.text();
 
-        // Concurrency limit
-        const CONCURRENCY_LIMIT = 3;
-        let currentIndex = 0;
+            // Cache the file content
+            this.downloadedFiles.set(latestFile.name, text);
 
-        const downloadNext = async (): Promise<void> => {
-            if (currentIndex >= filesToDownload.length) return;
+            const filePath = `${downloadPath}/${latestFile.name}`;
+            await writeTextFile(filePath, text);
 
-            const index = currentIndex++;
-            const file = filesToDownload[index];
-
-            try {
-                const blob = await this.fileService.downloadFile(file);
-                const text = await blob.text();
-
-                // Cache the file content
-                this.downloadedFiles.set(file.name, text);
-
-                const filePath = `${downloadPath}/${file.name}`;
-                await writeTextFile(filePath, text);
-
-            } catch (error) {
-                console.error(`Failed to download file ${file.name}:`, error);
-                // Don't stop the whole process for one failed file
-            } finally {
-                this.downloadProgress++;
-            }
-
-            // Continue with next file
-            await downloadNext();
-        };
-
-        // Start initial batch
-        const initialPromises = [];
-        for (let i = 0; i < Math.min(CONCURRENCY_LIMIT, filesToDownload.length); i++) {
-            initialPromises.push(downloadNext());
+            this.downloadProgress = 1;
+        } catch (error) {
+            console.error(`Failed to download latest file ${latestFile.name}:`, error);
         }
-
-        await Promise.all(initialPromises);
 
         this.isDownloading = false;
         this.downloadProgress = 0; // Reset progress after completion
@@ -406,6 +380,10 @@ export class MainComponent implements OnInit {
 
     openSettings(): void {
         this.router.navigate(['/settings']);
+    }
+
+    openHistory(): void {
+        this.router.navigate(['/history']);
     }
 
     // Extract date from filename (format: CST_STU_003_20251117_1052.txt)

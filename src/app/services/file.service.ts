@@ -7,6 +7,7 @@ export interface DeviceFile {
   size: string;
   sizeBytes: number;
   downloadUrl: string;
+  lastModified: Date;
 }
 
 @Injectable({
@@ -68,10 +69,14 @@ export class FileService {
       if (index === 0) return; // Skip header row
 
       const cells = row.querySelectorAll('td');
-      if (cells.length >= 2) {
+      if (cells.length >= 3) {
         const name = cells[0].textContent?.trim() || '';
         const sizeText = cells[1].textContent?.trim() || '';
+        const lastModifiedText = cells[2].textContent?.trim() || '';
         const sizeBytes = this.parseSizeToBytes(sizeText);
+
+        // Parse the last modified date
+        const lastModified = this.parseLastModified(lastModifiedText);
 
         // Only include non-empty files (> 1 KB)
         if (sizeBytes > 1024) {
@@ -79,11 +84,15 @@ export class FileService {
             name,
             size: sizeText,
             sizeBytes,
-            downloadUrl: `${deviceUrl}/download?file=${encodeURIComponent(name)}`
+            downloadUrl: `${deviceUrl}/download?file=${encodeURIComponent(name)}`,
+            lastModified
           });
         }
       }
     });
+
+    // Sort by last modified date (newest first)
+    files.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
 
     return files;
   }
@@ -102,6 +111,21 @@ export class FileService {
       case 'GB': return value * 1024 * 1024 * 1024;
       default: return 0;
     }
+  }
+
+  private parseLastModified(lastModifiedText: string): Date {
+    // Expected format from the device HTML: "YYYY-MM-DD HH:MM:SS" or similar
+    // If the format is different, adjust parsing accordingly
+    try {
+      const date = new Date(lastModifiedText);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    } catch (error) {
+      console.warn('Failed to parse last modified date:', lastModifiedText);
+    }
+    // Return current date as fallback
+    return new Date();
   }
 
   async downloadFile(file: DeviceFile): Promise<Blob> {

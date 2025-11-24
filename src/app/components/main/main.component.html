@@ -42,14 +42,33 @@
             <div *ngIf="isDownloading" class="text-center p-10 bg-gray-50 rounded-xl mb-5">
                 <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
                 </div>
-                <p class="text-gray-600">Téléchargement des fichiers en cours...</p>
+                <p class="text-gray-600">Téléchargement du fichier le plus récent...</p>
                 <div class="max-w-xs mx-auto mt-4">
                     <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
                         <div class="h-full bg-blue-600 transition-all duration-300"
                             [style.width.%]="(downloadProgress / downloadTotal) * 100"></div>
                     </div>
-                    <p class="text-xs text-gray-500 m-0">{{ downloadProgress }} / {{ downloadTotal }} fichiers</p>
+                    <p class="text-xs text-gray-500 m-0">{{ downloadProgress }} / {{ downloadTotal }} fichier</p>
                 </div>
+            </div>
+
+            <div *ngIf="!isLoading && !isDownloading && files.length > 0"
+                class="bg-green-50 text-green-700 p-4 rounded-lg flex items-center justify-between gap-3 mb-5">
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                        class="w-6 h-6 flex-shrink-0">
+                        <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
+                    </svg>
+                    <div>
+                        <p class="font-semibold m-0">Voici le fichier de la dernière trajectoire</p>
+                        <p class="text-xs text-green-600 m-0 mt-1">Le fichier le plus récent a été téléchargé
+                            automatiquement</p>
+                    </div>
+                </div>
+                <button (click)="openHistory()"
+                    class="px-4 py-2 rounded-lg border-none bg-green-600 text-white cursor-pointer transition-all duration-200 hover:bg-green-700 font-medium text-sm whitespace-nowrap">
+                    Voir l'historique
+                </button>
             </div>
 
             <div *ngIf="errorMessage" class="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-3 mb-5">

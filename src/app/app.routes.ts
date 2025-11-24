@@ -3,6 +3,7 @@ import { ImportConfigComponent } from './components/import-config/import-config.
 import { ConnectionComponent } from './components/connection/connection.component';
 import { MainComponent } from './components/main/main.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { HistoryComponent } from './components/history/history.component';
 import { configGuard } from './guards/config.guard';
 import { GraphiqueComponent } from './components/graphique/graphique.component';
 
@@ -12,5 +13,6 @@ export const routes: Routes = [
   { path: 'connection', component: ConnectionComponent, canActivate: [configGuard] },
   { path: 'main', component: MainComponent, canActivate: [configGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [configGuard] },
+  { path: 'history', component: HistoryComponent, canActivate: [configGuard] },
   { path: 'graphique', component: GraphiqueComponent, canActivate: [configGuard] }
 ];

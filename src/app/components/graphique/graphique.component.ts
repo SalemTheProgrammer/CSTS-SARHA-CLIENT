@@ -94,6 +94,11 @@ export class GraphiqueComponent implements OnInit {
       return typeof value === 'number' ? String(value) : value;
     };
 
+    console.log('=== Applying Config Metadata ===');
+    console.log('Full config object:', cfg);
+    console.log('numeroArgument:', cfg.numeroArgument);
+    console.log('numeroAgrument (typo):', cfg.numeroAgrument);
+
     this.company = toStringValue(cfg.societe) ?? null;
     this.shipName = toStringValue(cfg.nom) ?? toStringValue(cfg.deviceName);
     this.registration = toStringValue(cfg.immatricule);
@@ -102,12 +107,19 @@ export class GraphiqueComponent implements OnInit {
     this.callSign = toStringValue(cfg.indicatifAppel);
 
     const mareeValue = cfg.numeroAgrument ?? cfg.numeroArgument;
+    console.log('Extracted mareeValue:', mareeValue);
     this.maree = toStringValue(mareeValue);
+    console.log('Final this.maree:', this.maree);
 
     this.portAttache = toStringValue(cfg.portAttache);
     this.latitude = cfg.latitude ?? null;
     this.longitude = cfg.longitude ?? null;
     this.deviceIp = toStringValue(cfg.deviceIp);
+
+    console.log('=== Metadata Applied ===');
+    console.log('Company:', this.company);
+    console.log('Ship Name:', this.shipName);
+    console.log('Maree (Agrément Num):', this.maree);
   }
 
   async ngOnInit(): Promise<void> {

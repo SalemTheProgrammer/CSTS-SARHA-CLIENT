@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,17 +11,26 @@ import { DeviceService } from '../../services/device.service';
   templateUrl: './connection.component.html',
   styleUrls: ['./connection.component.css']
 })
-export class ConnectionComponent implements OnInit {
+export class ConnectionComponent implements OnInit, OnDestroy {
   // Connection states
-  isConnecting = true;
-  connectionFailed = false;
+  isConnecting = false; // Don't show loading spinner
+  connectionFailed = true; // Show status cards by default
   connectionSuccess = false;
+  isWifiConnected = navigator.onLine; // Track actual network status
 
   // API configuration
+  showPasswordPrompt = false;
   showApiConfig = false;
   customApiUrl = '';
+  configPassword = '';
+  passwordError = '';
   apiUrlError = '';
   currentApiUrl = '';
+  private readonly REQUIRED_PASSWORD = 'CST_sarha_2025';
+
+  // Retry countdown
+  retryCountdown = 2;
+  private retryInterval: any;
 
   constructor(
     private deviceService: DeviceService,
@@ -31,29 +40,69 @@ export class ConnectionComponent implements OnInit {
   ngOnInit(): void {
     this.currentApiUrl = this.deviceService.getApiUrl();
     this.customApiUrl = this.currentApiUrl;
+    this.updateNetworkStatus(); // Initial check
     this.tryWifiConnection();
+  }
+
+  ngOnDestroy(): void {
+    // Clear interval on component destroy
+    if (this.retryInterval) {
+      clearInterval(this.retryInterval);
+    }
+  }
+
+  @HostListener('window:online')
+  @HostListener('window:offline')
+  updateNetworkStatus(): void {
+    this.isWifiConnected = navigator.onLine;
   }
 
   /**
    * Try WiFi connection
    */
   async tryWifiConnection(): Promise<void> {
-    this.isConnecting = true;
-    this.connectionFailed = false;
+    // Don't show connecting state, keep showing status cards
+    this.connectionFailed = true; // Always show status cards
     this.connectionSuccess = false;
 
     const isConnected = await this.deviceService.checkDeviceConnection();
 
     if (isConnected) {
       this.connectionSuccess = true;
+      this.connectionFailed = false;
+      // Clear retry interval if it exists
+      if (this.retryInterval) {
+        clearInterval(this.retryInterval);
+      }
       setTimeout(() => {
         this.router.navigate(['/main']);
       }, 2000);
     } else {
       this.connectionFailed = true;
+      this.startRetryCountdown();
+    }
+  }
+
+  /**
+   * Start countdown for automatic retry
+   */
+  startRetryCountdown(): void {
+    this.retryCountdown = 2;
+
+    // Clear any existing interval
+    if (this.retryInterval) {
+      clearInterval(this.retryInterval);
     }
 
-    this.isConnecting = false;
+    this.retryInterval = setInterval(() => {
+      this.retryCountdown--;
+
+      if (this.retryCountdown <= 0) {
+        clearInterval(this.retryInterval);
+        // Keep status cards visible during retry
+        this.retry();
+      }
+    }, 1000);
   }
 
   /**
@@ -64,12 +113,39 @@ export class ConnectionComponent implements OnInit {
   }
 
   /**
-   * Open API configuration panel
+   * Open password prompt (first step)
    */
   openApiConfig(): void {
+    this.showPasswordPrompt = true;
+    this.configPassword = '';
+    this.passwordError = '';
+  }
+
+  /**
+   * Verify password and open configuration if correct
+   */
+  verifyPassword(): void {
+    if (this.configPassword !== this.REQUIRED_PASSWORD) {
+      this.passwordError = 'Incorrect password. Access denied.';
+      return;
+    }
+
+    // Password is correct, show the configuration modal
+    this.showPasswordPrompt = false;
     this.showApiConfig = true;
     this.customApiUrl = this.deviceService.getApiUrl();
+    this.configPassword = '';
+    this.passwordError = '';
     this.apiUrlError = '';
+  }
+
+  /**
+   * Close password prompt
+   */
+  closePasswordPrompt(): void {
+    this.showPasswordPrompt = false;
+    this.configPassword = '';
+    this.passwordError = '';
   }
 
   /**
@@ -78,6 +154,7 @@ export class ConnectionComponent implements OnInit {
   closeApiConfig(): void {
     this.showApiConfig = false;
     this.apiUrlError = '';
+    this.configPassword = '';
   }
 
   /**

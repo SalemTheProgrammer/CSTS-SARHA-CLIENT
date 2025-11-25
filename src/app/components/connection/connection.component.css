@@ -18,6 +18,45 @@
   transform: rotate(90deg);
 }
 
+/* Connection Status Card Styling */
+.connection-status-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.connection-status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.connection-status-card:hover::before {
+  left: 100%;
+}
+
+/* Scanning Dots Animation */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.scanning-dots {
+  animation: blink 1.4s infinite;
+  display: inline-block;
+}
+
 /* Custom scrollbar for consistency */
 ::-webkit-scrollbar {
   width: 8px;

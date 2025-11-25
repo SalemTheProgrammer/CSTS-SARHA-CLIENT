@@ -119,41 +119,41 @@
                             </div>
                         </div>
 
-                        <div class="flex gap-3">
+                        <div class="flex gap-4 flex-1">
                             <button (click)="viewGraph(file)" [disabled]="processingFile !== null"
-                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                                class="flex-1 px-8 py-6 rounded-xl border-none flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-semibold">
                                 <ng-container
                                     *ngIf="processingFile === file.name && processingAction === 'view'; else viewIcon">
                                     <div
-                                        class="w-5 h-5 border-2 border-green-700 border-t-transparent rounded-full animate-spin">
+                                        class="w-12 h-12 border-4 border-green-700 border-t-transparent rounded-full animate-spin">
                                     </div>
                                 </ng-container>
                                 <ng-template #viewIcon>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                        class="w-5 h-5">
+                                        class="w-12 h-12">
                                         <path
                                             d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
                                     </svg>
                                 </ng-template>
-                                Voir
+                                <span class="text-xl">Voir</span>
                             </button>
 
                             <button (click)="printGraph(file)" [disabled]="processingFile !== null"
-                                class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                                class="flex-1 px-8 py-6 rounded-xl border-none flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-semibold">
                                 <ng-container
                                     *ngIf="processingFile === file.name && processingAction === 'print'; else printIcon">
                                     <div
-                                        class="w-5 h-5 border-2 border-purple-700 border-t-transparent rounded-full animate-spin">
+                                        class="w-12 h-12 border-4 border-purple-700 border-t-transparent rounded-full animate-spin">
                                     </div>
                                 </ng-container>
                                 <ng-template #printIcon>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                        class="w-5 h-5">
+                                        class="w-12 h-12">
                                         <path
                                             d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" />
                                     </svg>
                                 </ng-template>
-                                Imprimer
+                                <span class="text-xl">Imprimer</span>
                             </button>
                         </div>
                     </div>

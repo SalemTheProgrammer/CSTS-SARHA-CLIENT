@@ -151,4 +151,29 @@ export class FileService {
       throw error;
     }
   }
+
+  async deleteFile(file: DeviceFile): Promise<void> {
+    try {
+      const deviceUrl = this.getDeviceUrl();
+
+      // Le serveur utilise un formulaire POST avec le paramètre "delete"
+      const formData = new FormData();
+      formData.append('delete', `delete_${file.name}`);
+
+      const response = await fetch(deviceUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete file: ${file.name}`);
+      }
+
+      // Clear cache after successful deletion
+      this.clearCache();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  }
 }

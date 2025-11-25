@@ -1,0 +1,33 @@
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" (click)="onCancel()">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-6 h-6 text-red-600">
+                    <path
+                        d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 m-0">Confirmer la suppression</h2>
+                <p class="text-sm text-gray-500 m-0 mt-1">Cette action est irréversible</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <p class="text-sm text-gray-700 m-0">Êtes-vous sûr de vouloir supprimer ce fichier ?</p>
+            <p class="text-sm font-medium text-gray-900 mt-2 m-0 break-all">{{ file?.name }}</p>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button (click)="onCancel()"
+                class="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 cursor-pointer transition-all duration-200 hover:bg-gray-50 font-medium text-sm">
+                Annuler
+            </button>
+            <button (click)="onConfirm()"
+                class="px-5 py-2.5 rounded-lg border-none bg-red-600 text-white cursor-pointer transition-all duration-200 hover:bg-red-700 font-medium text-sm">
+                Supprimer
+            </button>
+        </div>
+    </div>
+</div>

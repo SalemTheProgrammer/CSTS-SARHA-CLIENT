@@ -31,11 +31,12 @@ export class ConnectionComponent implements OnInit, OnDestroy {
   // Retry countdown
   retryCountdown = 2;
   private retryInterval: any;
+  enableRetry: boolean | undefined;
 
   constructor(
     private deviceService: DeviceService,
     private router: Router
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.currentApiUrl = this.deviceService.getApiUrl();
@@ -82,6 +83,7 @@ export class ConnectionComponent implements OnInit, OnDestroy {
       this.startRetryCountdown();
     }
   }
+
 
   /**
    * Start countdown for automatic retry
@@ -160,16 +162,9 @@ export class ConnectionComponent implements OnInit, OnDestroy {
   /**
    * Save API configuration
    */
-  async saveApiConfig(): Promise<void> {
-    this.apiUrlError = '';
-
+  saveApiConfig(): void {
     if (!this.customApiUrl.trim()) {
       this.apiUrlError = 'API URL cannot be empty';
-      return;
-    }
-
-    if (!this.deviceService.validateApiUrl(this.customApiUrl)) {
-      this.apiUrlError = 'Invalid URL format. Must start with http:// or https://';
       return;
     }
 
@@ -178,7 +173,8 @@ export class ConnectionComponent implements OnInit, OnDestroy {
       this.currentApiUrl = this.customApiUrl;
       this.closeApiConfig();
 
-      // Retry connection with new URL
+      // Enable retry after configuration change and test connection
+      this.enableRetry = true;
       this.tryWifiConnection();
     } catch (error) {
       this.apiUrlError = 'Failed to save API URL';
@@ -186,12 +182,16 @@ export class ConnectionComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Reset to default API URL
+   * Reset API configuration to default
    */
-  resetToDefault(): void {
+  resetApiConfig(): void {
     this.deviceService.resetApiUrl();
     this.customApiUrl = this.deviceService.getApiUrl();
     this.currentApiUrl = this.customApiUrl;
     this.apiUrlError = '';
+    
+    // Enable retry after reset and test connection
+    this.enableRetry = true;
+    this.tryWifiConnection();
   }
 }

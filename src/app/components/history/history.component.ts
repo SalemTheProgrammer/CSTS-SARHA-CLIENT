@@ -7,11 +7,14 @@ import { SettingsService } from '../../services/settings.service';
 import { SetupService } from '../../services/setup.service';
 import { PrintService } from '../../services/print.service';
 import { GraphiqueDataService } from '../../services/graphique-data.service';
+import { LocalFileStorageService } from '../../services/local-file-storage.service';
+import { FileHistoryService } from '../../services/file-history.service';
+import { DeleteConfirmationComponent } from '../main/delete-confirmation/delete-confirmation.component';
 
 @Component({
     selector: 'app-history',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, DeleteConfirmationComponent],
     templateUrl: './history.component.html',
     styleUrls: ['./history.component.css']
 })
@@ -28,7 +31,11 @@ export class HistoryComponent implements OnInit {
 
     // Track which file/action is currently processing
     processingFile: string | null = null;
-    processingAction: 'view' | 'print' | null = null;
+    processingAction: 'view' | 'print' | 'delete' | null = null;
+
+    // Delete confirmation popup
+    showDeletePopup = false;
+    fileToDelete: DeviceFile | null = null;
 
     private downloadedFiles: Map<string, string> = new Map();
 
@@ -38,6 +45,8 @@ export class HistoryComponent implements OnInit {
         private setupService: SetupService,
         private printService: PrintService,
         private graphiqueDataService: GraphiqueDataService,
+        private localFileStorage: LocalFileStorageService,
+        private fileHistory: FileHistoryService,
         private router: Router
     ) { }
 
@@ -128,19 +137,28 @@ export class HistoryComponent implements OnInit {
         try {
             let text: string;
 
-            // Check if file is already cached
-            if (this.downloadedFiles.has(file.name)) {
-                text = this.downloadedFiles.get(file.name)!;
-                console.log('Using cached file:', file.name);
+            // Check if cached file is up to date
+            const isUpToDate = await this.localFileStorage.isFileUpToDate(file);
+
+            if (isUpToDate) {
+                // Use cached version - file hasn't changed
+                console.log('Using up-to-date cached file:', file.name);
+                const blob = await this.localFileStorage.getFile(file.name);
+                text = await blob.text();
+                await this.fileHistory.recordAccess(file.name);
             } else {
-                // Download the file content if not cached
-                console.log('Downloading file:', file.name);
+                // File is new or has changed - download and update cache
+                console.log('Downloading new/changed file:', file.name);
                 const blob = await this.fileService.downloadFile(file);
                 text = await blob.text();
 
-                // Cache the file content for future use
-                this.downloadedFiles.set(file.name, text);
+                // Save to both locations (admin encrypted + user unencrypted)
+                await this.localFileStorage.saveToBothLocations(file, blob);
+                await this.fileHistory.recordDownload(file);
             }
+
+            console.log('File content length:', text.length);
+            console.log('First 200 chars:', text.substring(0, 200));
 
             if (!text || text.trim().length === 0) {
                 alert(`Le fichier ${file.name} est vide.`);
@@ -173,19 +191,28 @@ export class HistoryComponent implements OnInit {
         try {
             let text: string;
 
-            // Check if file is already cached
-            if (this.downloadedFiles.has(file.name)) {
-                text = this.downloadedFiles.get(file.name)!;
-                console.log('Using cached file:', file.name);
+            // Check if cached file is up to date
+            const isUpToDate = await this.localFileStorage.isFileUpToDate(file);
+
+            if (isUpToDate) {
+                // Use cached version - file hasn't changed
+                console.log('Using up-to-date cached file:', file.name);
+                const blob = await this.localFileStorage.getFile(file.name);
+                text = await blob.text();
+                await this.fileHistory.recordAccess(file.name);
             } else {
-                // Download the file content if not cached
-                console.log('Downloading file:', file.name);
+                // File is new or has changed - download and update cache
+                console.log('Downloading new/changed file:', file.name);
                 const blob = await this.fileService.downloadFile(file);
                 text = await blob.text();
 
-                // Cache the file content for future use
-                this.downloadedFiles.set(file.name, text);
+                // Save to both locations (admin encrypted + user unencrypted)
+                await this.localFileStorage.saveToBothLocations(file, blob);
+                await this.fileHistory.recordDownload(file);
             }
+
+            console.log('File content length:', text.length);
+            console.log('First 200 chars:', text.substring(0, 200));
 
             if (!text || text.trim().length === 0) {
                 alert(`Le fichier ${file.name} est vide.`);
@@ -201,5 +228,51 @@ export class HistoryComponent implements OnInit {
             this.processingFile = null;
             this.processingAction = null;
         }
+    }
+
+    // Show delete confirmation popup
+    confirmDelete(file: DeviceFile): void {
+        if (this.processingFile) return;
+
+        this.fileToDelete = file;
+        this.showDeletePopup = true;
+    }
+
+    // Delete file after confirmation
+    async deleteFile(): Promise<void> {
+        if (!this.fileToDelete || this.processingFile) return;
+
+        this.processingFile = this.fileToDelete.name;
+        this.processingAction = 'delete';
+        this.showDeletePopup = false;
+
+        try {
+            await this.fileService.deleteFile(this.fileToDelete);
+
+            // Record deletion in history
+            await this.fileHistory.recordDeletion(this.fileToDelete);
+
+            // Remove from cache if present
+            this.downloadedFiles.delete(this.fileToDelete.name);
+
+            // Refresh file list
+            await this.loadFiles();
+
+            // Show success message (optional)
+            console.log(`File ${this.fileToDelete.name} deleted successfully`);
+        } catch (error) {
+            alert(`Erreur lors de la suppression du fichier ${this.fileToDelete.name}`);
+            console.error('Delete error:', error);
+        } finally {
+            this.processingFile = null;
+            this.processingAction = null;
+            this.fileToDelete = null;
+        }
+    }
+
+    // Cancel delete
+    cancelDelete(): void {
+        this.showDeletePopup = false;
+        this.fileToDelete = null;
     }
 }

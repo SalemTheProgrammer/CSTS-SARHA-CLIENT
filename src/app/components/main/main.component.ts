@@ -10,11 +10,17 @@ import { SettingsService } from '../../services/settings.service';
 import { SetupService } from '../../services/setup.service';
 import { PrintService } from '../../services/print.service';
 import { GraphiqueDataService } from '../../services/graphique-data.service';
+import { LocalFileStorageService } from '../../services/local-file-storage.service';
+import { FileHistoryService } from '../../services/file-history.service';
+import { BackgroundSyncService } from '../../services/background-sync.service';
+import { FileItemComponent } from './file-item/file-item.component';
+import { DeleteConfirmationComponent } from './delete-confirmation/delete-confirmation.component';
+import { CodePromptComponent } from '../code-prompt/code-prompt.component';
 
 @Component({
     selector: 'app-main',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FileItemComponent, DeleteConfirmationComponent, CodePromptComponent],
     templateUrl: './main.component.html',
     styleUrls: ['./main.component.css']
 })
@@ -33,7 +39,16 @@ export class MainComponent implements OnInit {
 
     // Track which file/action is currently processing
     processingFile: string | null = null;
-    processingAction: 'view' | 'download' | 'print' | null = null;
+    processingAction: 'view' | 'download' | 'print' | 'delete' | null = null;
+
+    // Delete confirmation popup state
+    showDeletePopup = false;
+    fileToDelete: DeviceFile | null = null;
+
+    // Logo click counter for admin access
+    logoClickCount = 0;
+    logoClickTimer: any = null;
+    showCodePrompt = false;
 
     private downloadedFiles: Map<string, string> = new Map(); // Cache for downloaded file contents
 
@@ -44,7 +59,10 @@ export class MainComponent implements OnInit {
         private setupService: SetupService,
         private router: Router,
         private printService: PrintService,
-        private graphiqueDataService: GraphiqueDataService
+        private graphiqueDataService: GraphiqueDataService,
+        private localFileStorage: LocalFileStorageService,
+        private fileHistory: FileHistoryService,
+        private backgroundSyncService: BackgroundSyncService
     ) { }
 
     async ngOnInit(): Promise<void> {
@@ -61,29 +79,30 @@ export class MainComponent implements OnInit {
             const previousFiles = [...this.files];
             this.files = await this.fileService.fetchFileList(forceRefresh);
 
-            // Only auto-download on manual refresh (Actualiser button)
-            // OR if it's the first load and we haven't downloaded yet
-            const shouldAutoDownload = this.settingsService.isAutoDownloadEnabled() &&
-                (!this.settingsService.hasDownloaded() || forceRefresh);
+            if (this.files.length > 0) {
+                const latestFile = this.files[0];
 
-            if (shouldAutoDownload) {
-                // Check if files have changed
-                const filesChanged = this.haveFilesChanged(previousFiles, this.files);
+                // 1. Ensure latest file is available immediately
+                const isUpToDate = await this.localFileStorage.isFileUpToDate(latestFile);
+                if (!isUpToDate) {
+                    console.log('Downloading latest file immediately:', latestFile.name);
+                    const blob = await this.fileService.downloadFile(latestFile);
+                    await this.localFileStorage.saveToBothLocations(latestFile, blob);
+                    await this.fileHistory.recordDownload(latestFile);
+                }
 
-                if (filesChanged || !this.settingsService.hasDownloaded()) {
-                    // Stop loading spinner before starting download spinner to avoid double loading indicators
-                    this.isLoading = false;
-                    await this.downloadAllFiles();
-                    this.settingsService.markAsDownloaded();
+                // 2. Sync the rest in background with a timeout
+                const historyFiles = this.files.slice(1);
+                if (historyFiles.length > 0) {
+                    setTimeout(() => {
+                        this.backgroundSyncService.start(historyFiles);
+                    }, 2000); // 2 second delay
                 }
             }
 
             this.updatePagination();
         } catch (error) {
             console.error('Error loading files:', error);
-
-            // Connection lost - redirect to connection screen
-            this.router.navigate(['/connection']);
         } finally {
             this.isLoading = false;
         }
@@ -106,83 +125,9 @@ export class MainComponent implements OnInit {
         }
     }
 
-    async downloadPageFiles(): Promise<void> {
-        const downloadPath = this.settingsService.getDownloadPath();
-        if (!downloadPath) return;
 
-        // Filter files on current page that are not local and not cached
-        const filesToDownload = this.paginatedFiles.filter(f =>
-            f.downloadUrl !== 'local' && !this.downloadedFiles.has(f.name)
-        );
 
-        if (filesToDownload.length === 0) return;
 
-        this.isDownloading = true;
-        this.downloadTotal = filesToDownload.length;
-        this.downloadProgress = 0;
-
-        // Download files sequentially or in parallel
-        for (let i = 0; i < filesToDownload.length; i++) {
-            const file = filesToDownload[i];
-            try {
-                const blob = await this.fileService.downloadFile(file);
-                const text = await blob.text();
-
-                this.downloadedFiles.set(file.name, text);
-
-                const filePath = `${downloadPath}/${file.name}`;
-                await writeTextFile(filePath, text);
-            } catch (error) {
-                console.error(`Failed to download file ${file.name}:`, error);
-            } finally {
-                this.downloadProgress++;
-            }
-        }
-
-        this.isDownloading = false;
-        this.downloadProgress = 0;
-    }
-
-    async downloadAllFiles(): Promise<void> {
-        const downloadPath = this.settingsService.getDownloadPath();
-        if (!downloadPath) {
-            console.warn('No download path configured');
-            return;
-        }
-
-        this.isDownloading = true;
-        this.downloadProgress = 0;
-
-        // Filter out local files (like the sample file)
-        const allDeviceFiles = this.files.filter(f => f.downloadUrl !== 'local');
-
-        if (allDeviceFiles.length === 0) {
-            this.isDownloading = false;
-            return;
-        }
-
-        // Download only the latest file (files are already sorted by lastModified in descending order)
-        const latestFile = allDeviceFiles[0];
-        this.downloadTotal = 1;
-
-        try {
-            const blob = await this.fileService.downloadFile(latestFile);
-            const text = await blob.text();
-
-            // Cache the file content
-            this.downloadedFiles.set(latestFile.name, text);
-
-            const filePath = `${downloadPath}/${latestFile.name}`;
-            await writeTextFile(filePath, text);
-
-            this.downloadProgress = 1;
-        } catch (error) {
-            console.error(`Failed to download latest file ${latestFile.name}:`, error);
-        }
-
-        this.isDownloading = false;
-        this.downloadProgress = 0; // Reset progress after completion
-    }
 
     async downloadFile(file: DeviceFile): Promise<void> {
         try {
@@ -231,18 +176,24 @@ export class MainComponent implements OnInit {
         try {
             let text: string;
 
-            // Check if file is already cached
-            if (this.downloadedFiles.has(file.name)) {
-                text = this.downloadedFiles.get(file.name)!;
-                console.log('Using cached file:', file.name);
+            // Check if cached file is up to date
+            const isUpToDate = await this.localFileStorage.isFileUpToDate(file);
+
+            if (isUpToDate) {
+                // Use cached version - file hasn't changed
+                console.log('Using up-to-date cached file:', file.name);
+                const blob = await this.localFileStorage.getFile(file.name);
+                text = await blob.text();
+                await this.fileHistory.recordAccess(file.name);
             } else {
-                // Download the file content if not cached
-                console.log('Downloading file:', file.name);
+                // File is new or has changed - download and update cache
+                console.log('Downloading new/changed file:', file.name);
                 const blob = await this.fileService.downloadFile(file);
                 text = await blob.text();
 
-                // Cache the file content for future use
-                this.downloadedFiles.set(file.name, text);
+                // Save to both locations (admin encrypted + user unencrypted)
+                await this.localFileStorage.saveToBothLocations(file, blob);
+                await this.fileHistory.recordDownload(file);
             }
 
             console.log('File content length:', text.length);
@@ -280,18 +231,24 @@ export class MainComponent implements OnInit {
         try {
             let text: string;
 
-            // Check if file is already cached
-            if (this.downloadedFiles.has(file.name)) {
-                text = this.downloadedFiles.get(file.name)!;
-                console.log('Using cached file:', file.name);
+            // Check if cached file is up to date
+            const isUpToDate = await this.localFileStorage.isFileUpToDate(file);
+
+            if (isUpToDate) {
+                // Use cached version - file hasn't changed
+                console.log('Using up-to-date cached file:', file.name);
+                const blob = await this.localFileStorage.getFile(file.name);
+                text = await blob.text();
+                await this.fileHistory.recordAccess(file.name);
             } else {
-                // Download the file content if not cached
-                console.log('Downloading file:', file.name);
+                // File is new or has changed - download and update cache
+                console.log('Downloading new/changed file:', file.name);
                 const blob = await this.fileService.downloadFile(file);
                 text = await blob.text();
 
-                // Cache the file content for future use
-                this.downloadedFiles.set(file.name, text);
+                // Save to both locations (admin encrypted + user unencrypted)
+                await this.localFileStorage.saveToBothLocations(file, blob);
+                await this.fileHistory.recordDownload(file);
             }
 
             console.log('File content length:', text.length);
@@ -360,23 +317,7 @@ export class MainComponent implements OnInit {
         await this.loadFiles(true);
     }
 
-    // Check if files have changed (by comparing names and sizes)
-    private haveFilesChanged(oldFiles: DeviceFile[], newFiles: DeviceFile[]): boolean {
-        if (oldFiles.length !== newFiles.length) {
-            return true;
-        }
 
-        for (let i = 0; i < oldFiles.length; i++) {
-            const oldFile = oldFiles[i];
-            const newFile = newFiles.find(f => f.name === oldFile.name);
-
-            if (!newFile || newFile.sizeBytes !== oldFile.sizeBytes) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     openSettings(): void {
         this.router.navigate(['/settings']);
@@ -386,16 +327,80 @@ export class MainComponent implements OnInit {
         this.router.navigate(['/history']);
     }
 
-    // Extract date from filename (format: CST_STU_003_20251117_1052.txt)
-    extractDateFromFilename(filename: string): string {
-        const dateMatch = filename.match(/(\d{8})/);
-        if (dateMatch) {
-            const dateStr = dateMatch[1];
-            const year = dateStr.substring(0, 4);
-            const month = dateStr.substring(4, 6);
-            const day = dateStr.substring(6, 8);
-            return `${day}/${month}/${year}`;
+    // Show delete confirmation popup
+    confirmDelete(file: DeviceFile): void {
+        if (this.processingFile) return;
+
+        this.fileToDelete = file;
+        this.showDeletePopup = true;
+    }
+
+    // Cancel delete operation
+    cancelDelete(): void {
+        this.showDeletePopup = false;
+        this.fileToDelete = null;
+    }
+
+    // Delete file after confirmation
+    async deleteFile(): Promise<void> {
+        if (!this.fileToDelete || this.processingFile) return;
+
+        this.processingFile = this.fileToDelete.name;
+        this.processingAction = 'delete';
+        this.showDeletePopup = false;
+
+        try {
+            await this.fileService.deleteFile(this.fileToDelete);
+
+            // Record deletion in history
+            await this.fileHistory.recordDeletion(this.fileToDelete);
+
+            // Remove from cache if present
+            this.downloadedFiles.delete(this.fileToDelete.name);
+
+            // Refresh file list
+            await this.loadFiles(true);
+
+            // Show success message (optional)
+            console.log(`File ${this.fileToDelete.name} deleted successfully`);
+        } catch (error) {
+            alert(`Erreur lors de la suppression du fichier ${this.fileToDelete.name}`);
+            console.error('Delete error:', error);
+        } finally {
+            this.processingFile = null;
+            this.processingAction = null;
+            this.fileToDelete = null;
         }
-        return filename; // fallback to original filename if no date found
+    }
+    // Logo click handler for admin access
+    onLogoClick(): void {
+        this.logoClickCount++;
+
+        // Reset timer on each click
+        if (this.logoClickTimer) {
+            clearTimeout(this.logoClickTimer);
+        }
+
+        // Reset counter after 2 seconds of inactivity
+        this.logoClickTimer = setTimeout(() => {
+            this.logoClickCount = 0;
+        }, 2000);
+
+        // Show code prompt on 4th click
+        if (this.logoClickCount >= 4) {
+            this.logoClickCount = 0;
+            this.showCodePrompt = true;
+        }
+    }
+
+    // Code prompt success handler
+    onCodeSuccess(): void {
+        this.showCodePrompt = false;
+        this.router.navigate(['/admin']);
+    }
+
+    // Code prompt cancel handler
+    onCodeCancel(): void {
+        this.showCodePrompt = false;
     }
 }

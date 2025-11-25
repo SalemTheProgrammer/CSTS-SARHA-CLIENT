@@ -119,6 +119,24 @@
                             </ng-template>
                             Imprimer
                         </button>
+
+                        <button (click)="confirmDelete(file)" [disabled]="processingFile !== null"
+                            class="px-4 py-2.5 rounded-lg border-none flex items-center gap-2 cursor-pointer transition-all duration-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale font-medium text-sm">
+                            <ng-container
+                                *ngIf="processingFile === file.name && processingAction === 'delete'; else deleteIcon">
+                                <div
+                                    class="w-5 h-5 border-2 border-red-700 border-t-transparent rounded-full animate-spin">
+                                </div>
+                            </ng-container>
+                            <ng-template #deleteIcon>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="w-5 h-5">
+                                    <path
+                                        d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                </svg>
+                            </ng-template>
+                            Supprimer
+                        </button>
                     </div>
                 </div>
 
@@ -147,3 +165,8 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Popup -->
+<app-delete-confirmation *ngIf="showDeletePopup" [file]="fileToDelete" (confirm)="deleteFile()"
+    (cancel)="cancelDelete()">
+</app-delete-confirmation>

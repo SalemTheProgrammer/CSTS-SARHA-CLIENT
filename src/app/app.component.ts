@@ -9,13 +9,10 @@ import { filter } from "rxjs/operators";
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.css",
 })
-export class AppComponent implements OnInit, OnDestroy {
-  private connectionCheckInterval: any;
-  private readonly CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
+export class AppComponent implements OnInit {
   private currentRoute = '';
 
   constructor(
-    private deviceService: DeviceService,
     private router: Router
   ) { }
 
@@ -26,36 +23,5 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((event: any) => {
         this.currentRoute = event.url;
       });
-
-    // Start connection monitoring
-    this.startConnectionMonitoring();
-  }
-
-  ngOnDestroy(): void {
-    // Clean up interval on component destroy
-    if (this.connectionCheckInterval) {
-      clearInterval(this.connectionCheckInterval);
-    }
-  }
-
-  /**
-   * Start periodic connection monitoring
-   */
-  private startConnectionMonitoring(): void {
-    this.connectionCheckInterval = setInterval(async () => {
-      // Skip check if we're already on the connection page
-      if (this.currentRoute.includes('/connection')) {
-        return;
-      }
-
-      // Check device connection
-      const isConnected = await this.deviceService.checkDeviceConnection();
-
-      // Redirect to connection page if disconnected
-      if (!isConnected) {
-        console.log('Device disconnected, redirecting to connection page...');
-        this.router.navigate(['/connection']);
-      }
-    }, this.CHECK_INTERVAL_MS);
   }
 }

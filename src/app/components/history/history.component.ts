@@ -22,7 +22,7 @@ export class HistoryComponent implements OnInit {
     files: DeviceFile[] = [];
     paginatedFiles: DeviceFile[] = [];
     currentPage = 1;
-    itemsPerPage = 5;
+    itemsPerPage = 7;
     totalPages = 1;
     isLoading = true;
     isDownloading = false;
@@ -36,6 +36,9 @@ export class HistoryComponent implements OnInit {
     // Delete confirmation popup
     showDeletePopup = false;
     fileToDelete: DeviceFile | null = null;
+
+    // Preserve pagination state when navigating
+    private savedCurrentPage = 1;
 
     private downloadedFiles: Map<string, string> = new Map();
 
@@ -52,6 +55,12 @@ export class HistoryComponent implements OnInit {
 
     async ngOnInit(): Promise<void> {
         await this.loadFiles();
+        // Restore pagination state if saved
+        if (this.savedCurrentPage > 1) {
+            console.log('Restoring pagination to page:', this.savedCurrentPage);
+            this.currentPage = this.savedCurrentPage;
+            this.updatePagination();
+        }
     }
 
     async loadFiles(): Promise<void> {
@@ -130,6 +139,10 @@ export class HistoryComponent implements OnInit {
 
     async viewGraph(file: DeviceFile): Promise<void> {
         if (this.processingFile) return;
+
+        // Save current pagination state before navigation
+        this.savedCurrentPage = this.currentPage;
+        console.log('Saved pagination page:', this.savedCurrentPage);
 
         this.processingFile = file.name;
         this.processingAction = 'view';

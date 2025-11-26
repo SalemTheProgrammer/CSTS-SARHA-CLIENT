@@ -6,11 +6,12 @@ import { FileHistoryService, FileHistoryEntry } from '../../services/file-histor
 import { LocalFileStorageService } from '../../services/local-file-storage.service';
 import { SetupService } from '../../services/setup.service';
 import { GraphiqueDataService } from '../../services/graphique-data.service';
+import { DeleteConfirmationComponent } from '../main/delete-confirmation/delete-confirmation.component';
 
 @Component({
     selector: 'app-admin-screen',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, DeleteConfirmationComponent],
     templateUrl: './admin-screen.component.html',
     styleUrls: ['./admin-screen.component.css']
 })
@@ -25,6 +26,23 @@ export class AdminScreenComponent implements OnInit {
 
     // Track which file is currently processing
     processingFile: string | null = null;
+    processingAction: 'delete' | null = null;
+
+    // Delete confirmation popup
+    showDeletePopup = false;
+    fileToDelete: FileHistoryEntry | null = null;
+    
+    // Adapter for delete confirmation component (expects DeviceFile with 'name' property)
+    get fileForDeleteConfirmation() {
+        if (!this.fileToDelete) return null;
+        return {
+            name: this.fileToDelete.fileName,
+            size: this.fileToDelete.fileSize,
+            sizeBytes: 0,
+            downloadUrl: 'local',
+            lastModified: new Date(this.fileToDelete.downloadedAt)
+        };
+    }
 
     // Filter properties
     statusFilter: 'all' | 'active' | 'deleted' = 'all';
@@ -173,29 +191,50 @@ export class AdminScreenComponent implements OnInit {
         });
     }
 
-    async deleteFile(file: FileHistoryEntry): Promise<void> {
+    // Show delete confirmation popup
+    confirmDelete(file: FileHistoryEntry): void {
         if (this.processingFile) return;
 
-        const confirmed = confirm(`Êtes-vous sûr de vouloir supprimer le fichier ${file.fileName} ?`);
-        if (!confirmed) return;
+        console.log('Showing delete confirmation for:', file.fileName);
+        this.fileToDelete = file;
+        this.showDeletePopup = true;
+    }
 
-        this.processingFile = file.fileName;
+    // Delete file after confirmation
+    async deleteFile(): Promise<void> {
+        if (!this.fileToDelete || this.processingFile) return;
+
+        console.log('Deletion confirmed, proceeding with:', this.fileToDelete.fileName);
+        this.processingFile = this.fileToDelete.fileName;
+        this.processingAction = 'delete';
+        this.showDeletePopup = false;
 
         try {
             // Delete file from local storage
-            await this.localFileStorage.deleteFile(file.fileName);
+            await this.localFileStorage.deleteFile(this.fileToDelete.fileName);
             
             // Record deletion in history
-            await this.fileHistoryService.recordDeletionByName(file.fileName);
+            await this.fileHistoryService.recordDeletionByName(this.fileToDelete.fileName);
             
             // Reload history to reflect changes
             await this.loadHistory();
+            
+            console.log(`File ${this.fileToDelete.fileName} deleted successfully`);
         } catch (error) {
-            alert(`Erreur lors de la suppression du fichier ${file.fileName}`);
+            alert(`Erreur lors de la suppression du fichier ${this.fileToDelete.fileName}`);
             console.error(error);
         } finally {
             this.processingFile = null;
+            this.processingAction = null;
+            this.fileToDelete = null;
         }
+    }
+
+    // Cancel delete
+    cancelDelete(): void {
+        console.log('Deletion cancelled by user');
+        this.showDeletePopup = false;
+        this.fileToDelete = null;
     }
 
     formatDateTime(date: Date): string {

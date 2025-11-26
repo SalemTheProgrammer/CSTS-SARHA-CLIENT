@@ -141,7 +141,7 @@
           <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
             <div>
               <h2 class="text-lg font-bold text-gray-800 m-0">Capteurs</h2>
-              <p class="text-xs text-gray-500 mt-0.5">Configuration des 12 sondes</p>
+              <p class="text-xs text-gray-500 mt-0.5">Configuration des captures</p>
             </div>
             <button (click)="addSensor()"
               class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all duration-200 font-bold text-xs border border-blue-100 cursor-pointer flex items-center gap-2 shadow-sm">
@@ -154,10 +154,10 @@
             </button>
           </div>
 
-          <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex-1 overflow-y-auto shadow-inner">
+          <div class="overflow-y-auto" style="max-height: 300px;">
             <div class="flex flex-col gap-3">
               <!-- Header Row -->
-              <div class="grid grid-cols-12 gap-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+              <div class="grid grid-cols-12 gap-1 px-1 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                 <div class="col-span-2">Capteur</div>
                 <div class="col-span-4">Libellé</div>
                 <div class="col-span-2">Min</div>
@@ -167,41 +167,41 @@
 
               <!-- Sensor Rows -->
               <div *ngFor="let sensor of activeSensors"
-                class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow duration-200 group">
+                class="bg-white p-1.5 rounded-md border border-gray-200 shadow-sm flex items-center gap-1 hover:shadow-md transition-shadow duration-200 group">
                 <!-- ID & Color -->
-                <div class="flex items-center gap-3 w-16 shrink-0">
-                  <div class="w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0 shadow-sm"
+                <div class="flex items-center gap-1 w-12 shrink-0">
+                  <div class="w-2.5 h-2.5 rounded-full border border-gray-300 shrink-0 shadow-sm"
                     [style.background-color]="sensor.color"></div>
-                  <span class="font-bold text-sm text-gray-700">T{{ sensor.id }}</span>
+                  <span class="font-bold text-xs text-gray-700">T{{ sensor.id }}</span>
                 </div>
 
                 <!-- Inputs -->
-                <div class="grid grid-cols-10 gap-3 flex-1">
+                <div class="grid grid-cols-10 gap-0.5 flex-1">
                   <div class="col-span-4">
                     <input type="text" [(ngModel)]="sensor.label"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white"
+                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white"
                       placeholder="Libellé">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.min"
-                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Min">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.max"
-                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Max">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.mode"
-                      class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Mode">
                   </div>
                 </div>
 
                 <!-- Delete -->
                 <button (click)="removeSensor(sensor.id)"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-white hover:bg-red-500 transition-all duration-200 cursor-pointer border-none bg-transparent shrink-0"
+                  class="w-5 h-5 flex items-center justify-center rounded-sm text-gray-300 hover:text-white hover:bg-red-500 transition-all duration-200 cursor-pointer border-none bg-transparent shrink-0"
                   title="Supprimer">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -227,7 +227,34 @@
                 capteur</button>
             </div>
           </div>
+          <!-- Image Modes -->
+          <div class="mt-3 flex justify-center bg-white">
+            <img src="assets/image-modes.png" alt="Image Modes" class="w-auto h-auto max-w-[70%] rounded-lg shadow-sm">
+          </div>
+          <!-- Mode Descriptions -->
+          <div class="mt-4 bg-blue-50 border-2 border-blue-200 rounded-lg p-4 shadow-sm">
+            <div class="space-y-2 text-sm">
+              <div class="flex items-start gap-2">
+                <span class="text-blue-700 font-semibold">Mode 0 — Valeur inférieure au seuil</span>
+                <span class="text-gray-500">/</span>
+                <span class="text-blue-600">Zone normale</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-blue-700 font-semibold">Mode 1 — Valeur dans la plage normale</span>
+                <span class="text-gray-500">/</span>
+                <span class="text-blue-600">Zone optimale</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-blue-700 font-semibold">Mode 2 — Valeur supérieure au seuil</span>
+                <span class="text-gray-500">/</span>
+                <span class="text-blue-600">Au-dessus du seuil</span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Empty Column for Spacing -->
+        <div class="col-span-0"></div>
 
       </div>
     </div>

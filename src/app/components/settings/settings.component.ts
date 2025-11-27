@@ -37,12 +37,23 @@ export class SettingsComponent implements OnInit {
     private setupService: SetupService,
     private storageService: StorageService,
     private graphiqueDataService: GraphiqueDataService
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     await this.settingsService.loadSettings();
     this.settings = this.settingsService.getSettings();
     this.chartSettings = this.chartSettingsService.getSettings();
+  }
+
+  // Getter and setter for days per page (converts to/from pointsPerPage)
+  get daysPerPage(): number {
+    return Math.max(1, Math.round(this.chartSettings.pointsPerPage / 1440));
+  }
+
+  set daysPerPage(days: number) {
+    // Ensure positive value
+    const validDays = Math.max(1, Math.round(days));
+    this.chartSettings.pointsPerPage = validDays * 1440;
   }
 
   async selectFolder(): Promise<void> {

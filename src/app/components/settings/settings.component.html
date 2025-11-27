@@ -42,7 +42,7 @@
           <!-- Row 1: General Settings (Full Width) -->
           <div class="bg-white rounded-xl">
             <h2 class="text-lg font-bold text-gray-800 mb-1">Général</h2>
-            <p class="text-xs text-gray-500 mb-4">Paramètres globaux de l'application</p>
+            <p class="text-xl text-gray-500 mb-4">Paramètres globaux de l'application</p>
 
             <div class="flex flex-col gap-3">
               <label class="text-sm font-semibold text-gray-700">Dossier de téléchargement</label>
@@ -66,22 +66,22 @@
           <div class="grid grid-cols-2 gap-8">
             <!-- Pagination Settings -->
             <div>
-              <h2 class="text-lg font-bold text-gray-800 mb-1">Pagination</h2>
-              <p class="text-xs text-gray-500 mb-4">Contrôle de l'affichage</p>
+              <h2 class="text-lg font-bold text-gray-800 mb-1">Echelle de l'axe horizentale</h2>
+              <p class="text-xl text-gray-500 mb-4">Date et heure</p>
 
               <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6 shadow-sm h-full">
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Points par page</label>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre de jours par page</label>
                   <div class="flex items-center gap-3">
-                    <input type="number" [(ngModel)]="chartSettings.pointsPerPage"
+                    <input type="number" [(ngModel)]="daysPerPage"
                       class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
-                      min="100" step="100" />
+                      min="1" step="1" />
                   </div>
-                  <span class="text-xs text-gray-400 mt-1 block">défaut: 1440</span>
+                  <span class="text-xl text-gray-400 mt-1 block">défaut: 1 jour (1440 points)</span>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Pas d'affichage</label>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Graduation</label>
                   <div class="flex items-center gap-3">
                     <select [(ngModel)]="chartSettings.displayStep"
                       class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm cursor-pointer">
@@ -93,31 +93,17 @@
                       <option [value]="60">1 heure</option>
                     </select>
                   </div>
-                  <span class="text-xs text-gray-400 mt-1 block">défaut: 1</span>
+                  <span class="text-xl text-gray-400 mt-1 block">défaut: 1</span>
                 </div>
               </div>
             </div>
 
             <!-- Temperature Settings -->
             <div>
-              <h2 class="text-lg font-bold text-gray-800 mb-1">Limites de l'axe vertical </h2>
-              <p class="text-xs text-gray-500 mb-4"> Température</p>
+              <h2 class="text-lg font-bold text-gray-800 mb-1">Echelle de l'axe vertical </h2>
+              <p class="text-xl text-gray-500 mb-4"> Température</p>
 
               <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6 shadow-sm h-full">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum</label>
-                  <div class="flex items-center gap-3">
-                    <div class="relative w-full">
-                      <input type="number" [(ngModel)]="chartSettings.tempMin"
-                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 shadow-sm"
-                        step="1" />
-                      <span
-                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">°C</span>
-                    </div>
-                  </div>
-                  <span class="text-xs text-gray-400 mt-1 block">défaut: -55</span>
-                </div>
-
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">Maximum</label>
                   <div class="flex items-center gap-3">
@@ -129,7 +115,21 @@
                         class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">°C</span>
                     </div>
                   </div>
-                  <span class="text-xs text-gray-400 mt-1 block">défaut: 125</span>
+                  <span class="text-xl text-gray-400 mt-1 block">défaut: 125</span>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum</label>
+                  <div class="flex items-center gap-3">
+                    <div class="relative w-full">
+                      <input type="number" [(ngModel)]="chartSettings.tempMin"
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 shadow-sm"
+                        step="1" />
+                      <span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">°C</span>
+                    </div>
+                  </div>
+                  <span class="text-xl text-gray-400 mt-1 block">défaut: -55</span>
                 </div>
               </div>
             </div>
@@ -141,10 +141,10 @@
           <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
             <div>
               <h2 class="text-lg font-bold text-gray-800 m-0">Capteurs</h2>
-              <p class="text-xs text-gray-500 mt-0.5">Configuration des captures</p>
+              <p class="text-xl text-gray-500 mt-0.5">Configuration des captures</p>
             </div>
             <button (click)="addSensor()"
-              class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all duration-200 font-bold text-xs border border-blue-100 cursor-pointer flex items-center gap-2 shadow-sm">
+              class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all duration-200 font-bold text-xl border border-blue-100 cursor-pointer flex items-center gap-2 shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -157,7 +157,7 @@
           <div class="overflow-y-auto" style="max-height: 300px;">
             <div class="flex flex-col gap-3">
               <!-- Header Row -->
-              <div class="grid grid-cols-12 gap-1 px-1 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+              <div class="grid grid-cols-12 gap-1 px-1 text-xl font-bold text-gray-400 uppercase tracking-wider mb-1">
                 <div class="col-span-2">Capteur</div>
                 <div class="col-span-4">Libellé</div>
                 <div class="col-span-2">Min</div>
@@ -172,29 +172,29 @@
                 <div class="flex items-center gap-1 w-12 shrink-0">
                   <div class="w-2.5 h-2.5 rounded-full border border-gray-300 shrink-0 shadow-sm"
                     [style.background-color]="sensor.color"></div>
-                  <span class="font-bold text-xs text-gray-700">T{{ sensor.id }}</span>
+                  <span class="font-bold text-xl text-gray-700">T{{ sensor.id }}</span>
                 </div>
 
                 <!-- Inputs -->
                 <div class="grid grid-cols-10 gap-0.5 flex-1">
                   <div class="col-span-4">
                     <input type="text" [(ngModel)]="sensor.label"
-                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white"
+                      class="w-full px-1 py-1 text-xl border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white"
                       placeholder="Libellé">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.min"
-                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xl border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Min">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.max"
-                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xl border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Max">
                   </div>
                   <div class="col-span-2">
                     <input type="number" [(ngModel)]="sensor.mode"
-                      class="w-full px-1 py-1 text-xs border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
+                      class="w-full px-1 py-1 text-xl border border-gray-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-gray-50 focus:bg-white text-center"
                       placeholder="Mode">
                   </div>
                 </div>

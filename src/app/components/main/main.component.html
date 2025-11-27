@@ -54,16 +54,12 @@
             </div>
 
             <div *ngIf="!isLoading && !isDownloading && files.length > 0"
-                class="bg-green-50 text-green-700 p-6 rounded-xl flex items-center justify-between gap-4 mb-6">
+                class=" text-green-700 p-6 rounded-xl flex items-center justify-between gap-4 mb-6">
                 <div class="flex items-center gap-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                        class="w-8 h-8 flex-shrink-0">
-                        <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
-                    </svg>
+                   
                     <div>
-                        <p class="font-semibold m-0 text-lg">Voici le fichier de la dernière marée</p>
-                        <p class="text-sm text-green-600 m-0 mt-1">Le fichier le plus récent a été téléchargé
-                            automatiquement</p>
+                        <p class="font-semibold m-0 text-3xl">La dernière marée</p>
+                     
                     </div>
                 </div>
                 <button (click)="openHistory()"
